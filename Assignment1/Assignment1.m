@@ -15,18 +15,18 @@ edfFilename  = "s1_high_resistance_bike.edf";
 
 % choose on the path notion of your operating system:
 filepath = edfSubfolder + "\" + edfFilename; % use this line for MS Windows
-% filepath = edfSubfolder + "/" + edfFilename; % use this line for Linux distributions / Mac OS X
+filepath = edfSubfolder + "/" + edfFilename; % use this line for Linux distributions / Mac OS X
 
 %% Execute the essence function of Assignment 1
 
-features = extract_basic_features(filepath);
+% features = extract_basic_features(filepath);
 
 
 %% Function extract_basic_features as a solution to Assignment 1
 % argument: TODO
 % return value(s): TODO
 
-function features = extract_basic_features(filepath)
+% function features = extract_basic_features(filepath)
 
     % Read header and rawdata from the EDF file
     [hdr, record] = edfread(filepath);
@@ -35,9 +35,9 @@ function features = extract_basic_features(filepath)
     sample_freq = hdr.frequency(2);
     
     % plot original signal
-    figure;
-    time = ((1:size(record, 2)) - 0.5) / sample_freq;
-    plot(time, wrist_ppg);
+    % figure;
+    % time = ((1:size(record, 2)) - 0.5) / sample_freq;
+    % plot(time, wrist_ppg);
     
     %% Filter and segment signal
     
@@ -47,6 +47,8 @@ function features = extract_basic_features(filepath)
     fpass = [min_freq max_freq]/(sample_freq*0.5); 
     [b, a] = butter(2, fpass, 'bandpass');
     wrist_ppg_filtered = filter(b, a, wrist_ppg);
+    
+    % wrist_ppg_filtered = bandpass(wrist_ppg, [min_freq max_freq], sample_freq);
     
     % plot unfiltered and filtered signal
     figure;
@@ -60,39 +62,8 @@ function features = extract_basic_features(filepath)
     title('BP filtered');
     hold off;
     
-    % segment into 60s windows
-    datapoints_per60s = sample_freq*60;
-    width_wrist_ppg_filtered = size(wrist_ppg_filtered, 2);
-    rownumber = size((1 : datapoints_per60s : width_wrist_ppg_filtered), 2);
-    length_lastrow = mod(width_wrist_ppg_filtered, datapoints_per60s);
-    
-    % matrix approach
-    wrist_ppg_filtered_windowed = NaN(rownumber, datapoints_per60s); % preallocating matrix for 60 second windows with NaN values
-    
-    count = 1;
-    for i = 1 : datapoints_per60s : width_wrist_ppg_filtered
-        if (i-1+datapoints_per60s) > width_wrist_ppg_filtered
-            wrist_ppg_filtered_windowed(count, 1:length_lastrow) = wrist_ppg_filtered(1, i:end);
-            break;
-        end
-        wrist_ppg_filtered_windowed(count, :) = wrist_ppg_filtered(1, i:(i-1+datapoints_per60s));
-        count = count+1;
-    end
-    
-    % cell array approach
-    wrist_ppg_filtered_windowed_2 = cell(rownumber, 1); % preallocating cell array for 60 second windows
-    
-    count = 1;
-    for i = 1 : datapoints_per60s : width_wrist_ppg_filtered
-        if (i-1+datapoints_per60s) > width_wrist_ppg_filtered
-            window_60s = wrist_ppg_filtered(1, i:end);
-            wrist_ppg_filtered_windowed_2(count, :) = {window_60s};
-            break;
-        end
-        window_60s = wrist_ppg_filtered(1, i:(i-1+datapoints_per60s));
-        wrist_ppg_filtered_windowed_2(count, :) = {window_60s};
-        count = count+1;
-    end
+    % segment into 60s windows    
+    ppg_windows = buffer(wrist_ppg_filtered, sample_freq*60, 0);
     
     %% Extract features
     features = NaN(rownumber, 8); % preallocating matrix for the features with NaN values - one row per time window and 8 columns for the extracted features
@@ -106,4 +77,4 @@ function features = extract_basic_features(filepath)
     
     % time domain features based on inter-beat intervals
     
-end
+%end
