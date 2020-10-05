@@ -74,8 +74,43 @@ filepath = edfSubfolder + "/" + edfFilename; % use this line for Linux distribut
     features(:, 2) = var (ppg_windows, 0, 2, 'omitnan'); % variance of all rows, with default weighting, ignoring NaN values
     
     % frequency domain features based on fourier transform (Assignment 1.2)
-        % use fft() function ?
     
+    signal = ppg_windows(2,:);
+    time   = time( 1:length(signal) );
+    
+    figure;
+    subplot(3,1,1);
+    plot(time, signal);
+    
+    % MATLAB approach
+    % --> https://de.mathworks.com/help/matlab/math/fft-for-spectral-analysis.html
+    signal_matlab = signal;
+    subplot(3,1,2);
+    % remove bias (0 Hz)??
+    % ...
+    Y = fft(signal_matlab);
+    %Pyy = Y.*conj(Y);
+    Pyy = Y.*conj(Y)/length(signal_matlab);
+    %axis_freq = sample_freq/length(signal_matlab)*(0:)
+    plot(Pyy);
+    [maxValue, indexMax] = max(Pyy);
+    f_peak = indexMax * sample_freq / length(signal_matlab);
+    disp("MATLAB approach says f_peak is " + f_peak + " Hz.");
+    %plot(freq,aproach_matlab);
+    
+    % FORUM approach
+    % --> https://stackoverrun.com/de/q/4139191
+    signal_forum = signal;
+    subplot(3,1,3);
+    % remove bias (0 Hz)
+    % signal_forum = signal_forum - mean(signal);
+    signal_fourier_domain = fft(signal_forum);
+    complex_magnitudes = abs(signal_fourier_domain);
+    plot(complex_magnitudes);
+    [maxValue, indexMax] = max(complex_magnitudes);
+    f_peak = indexMax * sample_freq / length(signal_forum);
+    disp("FORUM approach says f_peak is " + f_peak + " Hz.");
+
     % time domain features based on inter-beat intervals (Assignment 1.3)
     
 %end
