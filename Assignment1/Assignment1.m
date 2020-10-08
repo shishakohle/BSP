@@ -14,8 +14,8 @@ edfFilename  = "s1_high_resistance_bike.edf";
 % edfFilename  = "";
 
 % choose on the path notion of your operating system:
-filepath = edfSubfolder + "\" + edfFilename; % use this line for MS Windows
-% filepath = edfSubfolder + "/" + edfFilename; % use this line for Linux distributions / Mac OS X
+%filepath = edfSubfolder + "\" + edfFilename; % use this line for MS Windows
+filepath = edfSubfolder + "/" + edfFilename; % use this line for Linux distributions / Mac OS X
 
 %% Execute the essence function of Assignment 1
 
@@ -32,7 +32,7 @@ filepath = edfSubfolder + "\" + edfFilename; % use this line for MS Windows
     [hdr, record] = edfread(filepath);
     
     wrist_ppg   = record(2,:);
-    sample_freq = hdr.frequency(2);
+    f_sample = hdr.frequency(2);
     
     % plot original signal
     % figure;
@@ -50,10 +50,10 @@ filepath = edfSubfolder + "\" + edfFilename; % use this line for MS Windows
     
     % wrist_ppg_filtered = bandpass(wrist_ppg, [min_freq max_freq], sample_freq);
     
-    fpass = [min_freq max_freq]/(sample_freq*0.5); 
+    fpass = [min_freq max_freq]/(f_sample*0.5); 
     [b, a] = butter(2, fpass, 'bandpass'); % 2nd order BP seems to serve the purpose best
     wrist_ppg_filtered = filter(b, a, wrist_ppg);
-    time = ((1:size(record, 2)))/sample_freq;
+    time = ((1:size(record, 2)))/f_sample;
     
     % optionally plot unfiltered and filtered signal
 %     figure;
@@ -70,50 +70,28 @@ filepath = edfSubfolder + "\" + edfFilename; % use this line for MS Windows
 %     ylabel('Amplitude [?]');
 %     hold off;
     
-    %% Segment signal    
-    % segment into 60s windows - buffer() solution    
-%     wrist_ppg_filtered_windows = transpose( buffer(wrist_ppg_filtered, sample_freq*60, 0) );
-%     wrist_ppg_filtered_windows(wrist_ppg_filtered_windows==0) = NaN; %replace trailing zeros with NaN - otherwise mean and var would be wrong (problem if signal is actually 0 at some point)
-  
-    % segment into 60s windows - loop solution
-    datapoints_per60s = sample_freq*60;
-    width_wrist_ppg_filtered = size(wrist_ppg_filtered, 2);
-    rownumber = size((1 : datapoints_per60s : width_wrist_ppg_filtered), 2);
-    length_lastrow = mod(width_wrist_ppg_filtered, datapoints_per60s);
+    %% Segment signal into 60s windows
     
-    % matrix approach
-    wrist_ppg_filtered_windows = NaN(rownumber, datapoints_per60s); % preallocating matrix for 60 second windows with NaN values
+    % calculate some characteristics of the segments, that will be used
+    % throughout the following on a regular basis
+    width_wrist_ppg_filtered = length(wrist_ppg_filtered);
+    duration_window = 60; % duration of a window in seconds
+    datapoints_per_window = f_sample * duration_window;
+    window_count = ceil( width_wrist_ppg_filtered / datapoints_per_window );
     
-    count = 1;
-    for i = 1 : datapoints_per60s : width_wrist_ppg_filtered
-        if (i-1+datapoints_per60s) > width_wrist_ppg_filtered
-            wrist_ppg_filtered_windows(count, 1:length_lastrow) = wrist_ppg_filtered(1, i:end);
-            break;
-        end
-        wrist_ppg_filtered_windows(count, :) = wrist_ppg_filtered(1, i:(i-1+datapoints_per60s));
-        count = count+1;
-    end
+    % segment the PPG signal into 60s windows
+    wrist_ppg_filtered_windows = transpose( buffer(wrist_ppg_filtered, datapoints_per_window, 0) );
     
-    % cell array approach
-%     wrist_ppg_filtered_windows = cell(rownumber, 1); % preallocating cell array for 60 second windows
-%     
-%     count = 1;
-%     for i = 1 : datapoints_per60s : width_wrist_ppg_filtered
-%         if (i-1+datapoints_per60s) > width_wrist_ppg_filtered
-%             window_60s = wrist_ppg_filtered(1, i:end);
-%             wrist_ppg_filtered_windows(count, :) = {window_60s};
-%             break;
-%         end
-%         window_60s = wrist_ppg_filtered(1, i:(i-1+datapoints_per60s));
-%         wrist_ppg_filtered_windows(count, :) = {window_60s};
-%         count = count+1;
-%     end
-
+    % replace trailing zeros in the last window with NaN, using modulo
+    % (otherwise mean and var would be wrong)
+    wrist_ppg_filtered_windows(end, mod(length(wrist_ppg_filtered),datapoints_per_window)+1:end) = NaN;
+    
     %% Extract features
-    number_windows = size(wrist_ppg_filtered_windows, 1);
-    features = NaN(number_windows, 8); % preallocating matrix for the features with NaN values - one row for each time window and 8 columns for 8 extracted features each
     
-    % statistical features time domain (Assignment 1.1)
+    % preallocating matrix for the features with NaN values - one row for each time window and 8 columns for 8 extracted features each
+    features = NaN(window_count, 8);
+    
+    % statistical features (time domain) (Assignment 1.1)
     features(:, 1) = mean(wrist_ppg_filtered_windows, 2,    'omitnan'); % mean of all rows, ignoring NaN values
     features(:, 2) = var (wrist_ppg_filtered_windows, 0, 2, 'omitnan'); % variance of all rows, with default weighting, ignoring NaN values
     
@@ -169,7 +147,7 @@ filepath = edfSubfolder + "\" + edfFilename; % use this line for MS Windows
     % time domain features based on inter-beat intervals (Assignment 1.3)
     min_RRinterval = 1/max_freq; %minimum possible time period between heartbeats [s]
 
-    peak_intervals = NaN(rownumber, datapoints_per60s); % preallocating matrix for 60 second windows with NaN values
+    peak_intervals = NaN(window_count, datapoints_per_window); % preallocating matrix for 60 second windows with NaN values
 
     for i = 1 : size(wrist_ppg_filtered_windows,1)
         signal = wrist_ppg_filtered_windows(i, :);
