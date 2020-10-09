@@ -91,60 +91,75 @@ filepath = edfSubfolder + "/" + edfFilename; % use this line for Linux distribut
     % preallocating matrix for the features with NaN values - one row for each time window and 8 columns for 8 extracted features each
     features = NaN(window_count, 8);
     
-    % statistical features (time domain) (Assignment 1.1)
+    %% statistical features (time domain) (Assignment 1.1)
     features(:, 1) = mean(wrist_ppg_filtered_windows, 2,    'omitnan'); % mean of all rows, ignoring NaN values
     features(:, 2) = var (wrist_ppg_filtered_windows, 0, 2, 'omitnan'); % variance of all rows, with default weighting, ignoring NaN values
     
-    % frequency domain features based on fourier transform (Assignment 1.2)
-% %     signal = ppg_windows(2,:);
-% %     signal = ppg_windows;
-%     time   = time( 1:length(signal) );
-%     signal_length = length(signal);
-%     
-%     figure;
-%     subplot(3,1,1);
-%     plot(time, signal);
-%     
-%     % MATLAB approach
-%     % --> https://de.mathworks.com/help/matlab/math/fft-for-spectral-analysis.html
-%     subplot(3,1,2);
-%     % remove bias (0 Hz)??
-%     % ...
-%     Y = fft(signal);
-%     %Pyy = Y.*conj(Y);
-%     Pyy = Y.*conj(Y)/signal_length;
-%     %axis_freq = sample_freq/length(signal_matlab)*(0:)
-%     plot(Pyy);
-%     [maxValue, indexMax] = max(Pyy);
-%     f_peak = indexMax * sample_freq / signal_length;
-%     disp("MATLAB approach says f_peak is " + f_peak + " Hz.");
-%     %plot(freq,aproach_matlab);
-%     
-%     % Frequency domain
-%     n = 2^nextpow2(signal_length);
-%     Y_fd = fft(signal, n);
-%     f = sample_freq*(0:(n/2))/n;
-%     P = abs(Y/n).^2;
-%     figure;
-%     plot(f,P(1:n/2+1)) 
-%     title('Signal in Frequency Domain')
-%     xlabel('Frequency (f)')
-%     ylabel('|P(f)|^2')
- 
-%     % FORUM approach
-%     % --> https://stackoverrun.com/de/q/4139191
-%     signal_forum = signal;
-%     subplot(3,1,3);
-%     % remove bias (0 Hz)
-%     % signal_forum = signal_forum - mean(signal);
-%     signal_fourier_domain = fft(signal_forum);
-%     complex_magnitudes = abs(signal_fourier_domain);
-%     plot(complex_magnitudes);
-%     [maxValue, indexMax] = max(complex_magnitudes);
-%     f_peak = indexMax * sample_freq / length(signal_forum);
-%     disp("FORUM approach says f_peak is " + f_peak + " Hz.");
-
-    % time domain features based on inter-beat intervals (Assignment 1.3)
+    %% frequency domain features based on fourier transform (Assignment 1.2)
+    
+    % provisory choose a single signal
+    signal = wrist_ppg_filtered_windows(8,:);
+    
+    % calculate Power Spectral Density (PSD), following the hints in:
+    % https://de.mathworks.com/help/matlab/math/fft-for-spectral-analysis.html
+    % and
+    % https://stackoverrun.com/de/q/4139191
+    
+    % calculte DFT (i.e. the complex Fourier Coefficients)
+    % by utilizing the FFT algorithm
+    DFT = fft(signal);
+    
+    % "Compute the power spectral density, a measurement of the energy at
+    %  various frequencies, using the complex conjugate (CONJ)."
+    PSD = DFT .* conj(DFT) / length(signal); % TODO remove NaNs from signal first!!
+    
+    % "Form a frequency axis for the first [...] points and use it to plot
+    %  the result. (The remainder of the points are symmetric.)"
+    f_axis = f_sample / length(signal) * (0:length(signal)/2);
+    % f_axis and PSD: whats their correct length? they must be the same
+    % length for sure. how can we properly assign a frequency to every
+    % point in the PDS vector?
+    
+    % plot the PSD
+    figure;
+    plot(f_axis, PSD(1:length(signal)/2+1));
+    % f_axis and PSD: whats their correct length? they must be the same
+    % length for sure.
+    title('Power spectral density');
+    xlabel('Frequency (Hz)');
+    
+    %% find the frequency with the maximum power (Assignment 1.2a)
+    [powerMax, f_max_index] = max(PSD);
+    f_max_a = f_axis(f_max_index+1);
+    % f_max_a seems to contain f_max_b, but shifted +1 in index??
+    f_max_b = f_max_index * f_sample / length(signal);
+    disp("f_max_a = " + f_max_a + " Hz. f_max_b = " + f_max_b + " Hz.");
+    
+    % add the frequency with the max. pwer to the features
+    % TODO
+    
+    %% find the median frequency (Assignment 1.2b)
+    
+    % Ingo's approach
+    % TODO
+    
+    % add the median frequency to features
+    % TODO
+    
+    %% find the mean frequency (Assignment 1.2c)
+    
+    % "freq = meanfreq(pxx,f) returns the mean frequency of a power
+    %  spectral density (PSD) estimate, pxx. The frequencies, f,
+    %  correspond to the estimates in pxx."
+    % TODO
+    
+    % Ingo's approach
+    % TODO
+    
+    % add the mean frequency to features
+    % TODO
+    
+    %% time domain features based on inter-beat intervals (Assignment 1.3)
     min_RRinterval = 1/max_freq; %minimum possible time period between heartbeats [s]
 
     peak_intervals = NaN(window_count, datapoints_per_window); % preallocating matrix for 60 second windows with NaN values
@@ -157,11 +172,11 @@ filepath = edfSubfolder + "/" + edfFilename; % use this line for Linux distribut
         peak_intervals(i, 1:length_peak_widths) = peak_widths; %peak intervals [s]
         
         % optionally plot signal windows with peaks
-        figure;
-        findpeaks(signal, time, 'MinPeakDistance', min_RRinterval); %finds peaks in the signal which have to be seperated by at least the max expectable frequency
-        title('PPG signal - peaks')
-        xlabel('Time [s]')
-        ylabel('Amplitude [?]')
+%         figure;
+%         findpeaks(signal, time, 'MinPeakDistance', min_RRinterval); %finds peaks in the signal which have to be seperated by at least the max expectable frequency
+%         title('PPG signal - peaks')
+%         xlabel('Time [s]')
+%         ylabel('Amplitude [?]')
     end
     
     features(:, 6) = mean(peak_intervals, 2, 'omitnan');
