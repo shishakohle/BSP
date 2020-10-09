@@ -84,7 +84,7 @@ filepath = edfSubfolder + "/" + edfFilename; % use this line for Linux distribut
     
     % replace trailing zeros in the last window with NaN, using modulo
     % (otherwise mean and var would be wrong)
-    wrist_ppg_filtered_windows(end, mod(length(wrist_ppg_filtered),datapoints_per_window)+1:end) = NaN;
+    % wrist_ppg_filtered_windows(end, mod(length(wrist_ppg_filtered),datapoints_per_window)+1:end) = NaN;
     
     %% Extract features
     
@@ -98,7 +98,7 @@ filepath = edfSubfolder + "/" + edfFilename; % use this line for Linux distribut
     %% frequency domain features based on fourier transform (Assignment 1.2)
     
     % provisory choose a single signal
-    signal = wrist_ppg_filtered_windows(8,:);
+    signal = transpose (wrist_ppg_filtered_windows);
     
     % calculate Power Spectral Density (PSD), following the hints in:
     % https://de.mathworks.com/help/matlab/math/fft-for-spectral-analysis.html
@@ -108,35 +108,26 @@ filepath = edfSubfolder + "/" + edfFilename; % use this line for Linux distribut
     % calculte DFT (i.e. the complex Fourier Coefficients)
     % by utilizing the FFT algorithm
     DFT = fft(signal);
+    % TODO remove NaNs from last window first!!
     
     % "Compute the power spectral density, a measurement of the energy at
     %  various frequencies, using the complex conjugate (CONJ)."
-    PSD = DFT .* conj(DFT) / length(signal); % TODO remove NaNs from signal first!!
+    PSD = DFT .* conj(DFT) / length(signal);
     
-    % "Form a frequency axis for the first [...] points and use it to plot
-    %  the result. (The remainder of the points are symmetric.)"
+    % "Form a frequency axis (...)"
     f_axis = f_sample / length(signal) * (0:length(signal)/2);
-    % f_axis and PSD: whats their correct length? they must be the same
-    % length for sure. how can we properly assign a frequency to every
-    % point in the PDS vector?
-    
-    % plot the PSD
-    figure;
-    plot(f_axis, PSD(1:length(signal)/2+1));
-    % f_axis and PSD: whats their correct length? they must be the same
-    % length for sure.
-    title('Power spectral density');
-    xlabel('Frequency (Hz)');
+    % f_axis and PSD: whats their correct lengths?
     
     %% find the frequency with the maximum power (Assignment 1.2a)
     [powerMax, f_max_index] = max(PSD);
     f_max_a = f_axis(f_max_index+1);
     % f_max_a seems to contain f_max_b, but shifted +1 in index??
     f_max_b = f_max_index * f_sample / length(signal);
-    disp("f_max_a = " + f_max_a + " Hz. f_max_b = " + f_max_b + " Hz.");
+    consoleOutputs = "f_max_a = " + f_max_a + " Hz. f_max_b = " + f_max_b + " Hz.";
+    disp(consoleOutputs(:));
     
-    % add the frequency with the max. pwer to the features
-    % TODO
+    % add the frequency with the maximum power to the features
+    features(:,3) = f_max_a;
     
     %% find the median frequency (Assignment 1.2b)
     
