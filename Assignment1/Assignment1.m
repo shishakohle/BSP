@@ -84,7 +84,7 @@ filepath = edfSubfolder + "/" + edfFilename; % use this line for Linux distribut
     
     % replace trailing zeros in the last window with NaN, using modulo
     % (otherwise mean and var would be wrong)
-    % wrist_ppg_filtered_windows(end, mod(length(wrist_ppg_filtered),datapoints_per_window)+1:end) = NaN;
+    wrist_ppg_filtered_windows(end, mod(length(wrist_ppg_filtered),datapoints_per_window)+1:end) = NaN;
     
     %% Extract features
     
@@ -130,21 +130,12 @@ filepath = edfSubfolder + "/" + edfFilename; % use this line for Linux distribut
     features(:,3) = f_max_a;
     
     %% find the median frequency (Assignment 1.2b)
-    
-    % Ingo's approach
     % TODO
     
     % add the median frequency to features
     % TODO
     
     %% find the mean frequency (Assignment 1.2c)
-    
-    % "freq = meanfreq(pxx,f) returns the mean frequency of a power
-    %  spectral density (PSD) estimate, pxx. The frequencies, f,
-    %  correspond to the estimates in pxx."
-    % TODO
-    
-    % Ingo's approach
     % TODO
     
     % add the mean frequency to features
