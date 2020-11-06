@@ -113,12 +113,14 @@ function [PPG_slimBand, PPG_wideBand] = preprocessing(rawPPGsignal, samplingRate
     
     figure;
     hold on;
+    plot(time, wrist_ppg);
     plot(time, PPG_slimBand);
     plot(time, PPG_wideBand);
+    hold off;
 
 end
 
-function [PpTemp, amplitudeCorrectionFactors, PpPQI, BeatTimes] = PPGsegmentationAndBeatLocalization(PPG_slimBand, PPGwideBand, samplingRate, record)
+function [PpTemp, amplitudeCorrectionFactors, PpPQI, BeatTimes] = PPGsegmentationAndBeatLocalization(PPG_slimBand, PPG_wideBand, samplingRate, record)
 
 %     PpTemp = 
 %     amplitudeCorrectionFactors =
@@ -128,11 +130,19 @@ function [PpTemp, amplitudeCorrectionFactors, PpPQI, BeatTimes] = PPGsegmentatio
     max_freq = 210/60; % maximum expectable frequency is 210 bpm -> converted to Hz
     min_RRinterval = 1/max_freq;
     
-    time = ((1:size(record, 2)))/samplingRate;
+    time = ((1:size(PPG_slimBand, 2)))/samplingRate;
     time   = time( 1:length(PPG_slimBand) );
     
-    [peak_vals, peak_locs, peak_widths, peak_prominences] = findpeaks(PPG_slimBand, time, 'MinPeakDistance', min_RRinterval);
-    length_peak_widths = size(peak_widths, 2);
+    % find minima
+    PPG_slimBand_inv = PPG_slimBand*-1;
+%     figure;
+%     hold on;
+%     plot(time, PPG_wideBand);
+%     findpeaks(PPG_slimBand, time, 'MinPeakDistance', min_RRinterval);
+%     findpeaks(PPG_slimBand_inv, time, 'MinPeakDistance', min_RRinterval);
+%     hold off;
+    [peak_vals, peak_locs, peak_widths, peak_prominences] = findpeaks(PPG_slimBand_inv, time, 'MinPeakDistance', min_RRinterval);
+    BeatTimes = peak_locs;
         
 %     BeatTimes = % time of detected beats (in seconds after the start of the signal
 
