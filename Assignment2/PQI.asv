@@ -30,7 +30,7 @@ rawPPGsignal   = record(2,:);
 samplingRate = hdr.frequency(2);
 
 
-pqi = PQI_func(rawPPGsignal, samplingRate, record);
+pqi = PQI_func(rawPPGsignal, samplingRate);
 
 function pulseQualityIndex = PQI_func(rawPPGsignal, samplingRate, record)
     
@@ -38,7 +38,7 @@ function pulseQualityIndex = PQI_func(rawPPGsignal, samplingRate, record)
     [PPG_slimBand, PPG_wideBand] = preprocessing(rawPPGsignal, samplingRate);
     
     % call (...)
-    [PpTemp, amplitudeCorrectionFactors, PpPQI, BeatTimes] = PPGsegmentationAndBeatLocalization(PPG_slimBand, PPG_wideBand, samplingRate, record);
+    [PpTemp, amplitudeCorrectionFactors, PpPQI, BeatTimes] = PPGsegmentationAndBeatLocalization(PPG_slimBand, PPG_wideBand, samplingRate , record);
     
     % call (...)
     % per each pulse -> loop?
@@ -118,7 +118,7 @@ function [PPG_slimBand, PPG_wideBand] = preprocessing(rawPPGsignal, samplingRate
 
 end
 
-function [PpTemp, amplitudeCorrectionFactors, PpPQI, BeatTimes] = PPGsegmentationAndBeatLocalization(PPG_slimBand, PPGwideBand, samplingRate, record)
+function [PpTemp, amplitudeCorrectionFactors, PpPQI, BeatTimes] = PPGsegmentationAndBeatLocalization(PPG_slimBand, PPGwideBand, record, samplingRate)
 
 %     PpTemp = 
 %     amplitudeCorrectionFactors =
