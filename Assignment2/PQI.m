@@ -28,7 +28,12 @@ function [matrix, pulseWaveTemplate] = PQI (rawPPGsignal, samplingRate, ...
     pulseWaveTemplate = Temp_Ad; % TODO: is this accurate?
     
 end
-    
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Functions representing main blocks %
+% in Figure 1 of the Papini paper    %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 function [PPG_slimBand, PPG_wideBand] = preprocessing(rawPPGsignal, ...
     samplingRate)
     
@@ -141,6 +146,11 @@ function PulseQualityIndex = pulseTemplateComparision(PP_PQI, Temp_Ad)
     
 end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Functions representing operations  %
+% in Figure 1 of the Papini paper    %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 function filtered = bandpassFilter(raw, f_min, f_max, f_sample)
     % "Bandpass filter" in the Papini paper, Figure 1
     f_pass = [f_min f_max] / (0.5 * f_sample);
@@ -172,6 +182,11 @@ function [PP_Temp, AmplitudeCorrectionFactors, PP_PQI] = ...
     % TODO (Ingo)
     
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Functions representing formulas    %
+% in Figure 1 of the Papini paper    %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function PP_Temp = PP_Temp(PP)
     % Forumula 9 in the Papini paper
