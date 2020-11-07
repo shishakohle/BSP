@@ -147,3 +147,24 @@ function [PpTemp, amplitudeCorrectionFactors, PpPQI, BeatTimes] = PPGsegmentatio
 %     BeatTimes = % time of detected beats (in seconds after the start of the signal
 
 end
+
+function PPamplitude = PPamplitude(PP)
+    % formula 7 in the Papini paper
+    PPamplitude = abs( max(PP) - min(PP) );
+end
+
+function PPshift = PPshift(PP)
+    % formula 8 in the Papini paper
+    PPshift = ( max(PP) + min(PP) ) / 2;
+end
+
+function PP_Temp = PP_Temp(PP)
+    % formula 9 in the Papini paper
+    PP_Temp = (PP - PPshift(PP)) / PPamplitude(PP);
+end
+
+function PP_PQI = PP_PQI(PP)
+    % formula 10 in the Papini paer
+    PP_PQI = PP - PPshift(PP);
+end
+
