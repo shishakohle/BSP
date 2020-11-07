@@ -39,61 +39,72 @@ function [PPG_slimBand, PPG_wideBand] = preprocessing(rawPPGsignal, ...
     
     % "Pre-processing" in the Papini paper, Figure 1
     
+    % filter signal
     PPG_slimBand = bandpassFilter(rawPPGsignal, 0.4, 2.25, samplingRate);
     PPG_wideBand = bandpassFilter(rawPPGsignal, 0.4, 10.0, samplingRate);
     
-%     % optionally plot each signal
-%     
-%     % choose on an EDF subfolder:
-%     % edfSubfolder = ".";
-%     edfSubfolder = "edf";
-% 
-%     % choose on an EDF file:
-%     edfFilename  = "s1_high_resistance_bike.edf";
-%     % edfFilename  = ""; % TODO add further files
-%     % edfFilename  = "";
-% 
-%     % choose on the path notion of your operating system:
-%     % uncomment the next line for MS Windows
-%     filepath = edfSubfolder + "\" + edfFilename;
-%     % uncomment the next line for Linux distributions / Mac OS X
-%     % filepath = edfSubfolder + "/" + edfFilename;
-% 
-%     clear edfSubfolder;
-%     clear edfFilename;
-%     
-%     [hdr, record] = edfread(filepath);
-% 
-%     wrist_ppg   = record(2,:);
-%     f_sample = hdr.frequency(2);
-% 
-%     time = ((1:size(record, 2)))/f_sample;
-% 
-%     figure;
-%     hold on;
-%     subplot(3, 1, 1);
-%     plot(time, wrist_ppg);
-%     title('Unfiltered');
-%     xlabel('time [s]');
-%     ylabel('Amplitude [?]');
-%     subplot(3, 1, 2);
-%     plot(time, PPG_slimBand);
-%     title('slimBP filtered');
-%     xlabel('time [s]');
-%     ylabel('Amplitude [?]');
-%     subplot(3, 1, 3);
-%     plot(time, PPG_wideBand);
-%     title('wideBP filtered');
-%     xlabel('time [s]');
-%     ylabel('Amplitude [?]');
-%     hold off;
-%     
-%     figure;
-%     hold on;
-%     plot(time, wrist_ppg);
-%     plot(time, PPG_slimBand);
-%     plot(time, PPG_wideBand);
-%     hold off;
+    % phase correct wide band to slim band
+    [c, lags] = xcorr(PPG_slimBand, PPG_wideBand);               % compute cross correlation; keep lags vector
+    [~, iLag] = max(c(find(lags==0) : end));  % find the max in one-sided
+    PPG_wideBand_phaseCorrect = circshift(PPG_wideBand, [0 iLag]);           % correct for the shift
+    
+    
+    % optionally plot each signal - only for code testing, exclude in the
+    % final version
+    
+    % choose on an EDF subfolder:
+    % edfSubfolder = ".";
+    edfSubfolder = "edf";
+
+    % choose on an EDF file:
+    edfFilename  = "s1_high_resistance_bike.edf";
+    % edfFilename  = ""; % TODO add further files
+    % edfFilename  = "";
+
+    % choose on the path notion of your operating system:
+    % uncomment the next line for MS Windows
+    filepath = edfSubfolder + "\" + edfFilename;
+    % uncomment the next line for Linux distributions / Mac OS X
+    % filepath = edfSubfolder + "/" + edfFilename;
+
+    clear edfSubfolder;
+    clear edfFilename;
+    
+    [hdr, record] = edfread(filepath);
+
+    wrist_ppg   = record(2,:);
+    f_sample = hdr.frequency(2);
+
+    time = ((1:size(record, 2)))/f_sample;
+
+    figure;
+    hold on;
+    subplot(3, 1, 1);
+    plot(time, wrist_ppg);
+    title('Unfiltered');
+    xlabel('time [s]');
+    ylabel('Amplitude [?]');
+    subplot(3, 1, 2);
+    plot(time, PPG_slimBand);
+    title('slimBP filtered');
+    xlabel('time [s]');
+    ylabel('Amplitude [?]');
+    subplot(3, 1, 3);
+    plot(time, PPG_wideBand);
+    title('wideBP filtered');
+    xlabel('time [s]');
+    ylabel('Amplitude [?]');
+    hold off;
+    
+    figure;
+    hold on;
+    plot(time, wrist_ppg);
+    plot(time, PPG_slimBand);
+    plot(time, PPG_wideBand);
+    plot(time, PPG_wideBand_phaseCorrect, 'g');
+    hold off;
+    
+    PPG_wideBand = PPG_wideBand_phaseCorrect;
 
 end
 
@@ -103,30 +114,12 @@ function [PP_Temp, AmplitudeCorrectionFactors, PP_PQI, BeatTimes] = ...
 
     % "PPG segmentation, beat localization" in the Papini paper, Figure 1
     
-    PP_wideBand = segmentation(PPG_slimBand, PPG_wideBand);
-    BeatTimes = beatLocalization(PP_wideBand);
+    [BeatTimes, time] = beatLocalization(PPG_slimBand, samplingRate);    
+    PP_wideBand = segmentation(PPG_slimBand, PPG_wideBand, BeatTimes, time); % über beat times segementieren
     [PP_Temp, AmplitudeCorrectionFactors, PP_PQI] = pulseNormalization(...
         PP_wideBand);
     
-%     % minimum possible time period between heartbeats [s]
-%     max_freq = 210/60; % maximum expectable frequency is 210 bpm -> converted to Hz
-%     min_RRinterval = 1/max_freq;
-%     
-%     time = ((1:size(PPG_slimBand, 2)))/samplingRate;
-%     time   = time( 1:length(PPG_slimBand) );
-%     
-%     % find minima
-%     PPG_slimBand_inv = PPG_slimBand*-1;
-% %     figure;
-% %     hold on;
-% %     plot(time, PPG_wideBand);
-% %     findpeaks(PPG_slimBand, time, 'MinPeakDistance', min_RRinterval);
-% %     findpeaks(PPG_slimBand_inv, time, 'MinPeakDistance', min_RRinterval);
-% %     hold off;
-%     [peak_vals, peak_locs, peak_widths, peak_prominences] = findpeaks(PPG_slimBand_inv, time, 'MinPeakDistance', min_RRinterval);
-%     BeatTimes = peak_locs;
-%         
-% %     BeatTimes = % time of detected beats (in seconds after the start of the signal
+
 
 end
 
@@ -158,19 +151,48 @@ function filtered = bandpassFilter(raw, f_min, f_max, f_sample)
     filtered = filter(b, a, raw);
 end
 
-function PP = segmentation(PPG_slimBand, PPG_wideBand)
-    
-    % "Segmentation" in the Papini paper, Figure 1
-    
-    % TODO (Alex)
-    
-end
-
-function beatTimes = beatLocalization(PP)
+function [beatTimes, time] = beatLocalization(PPG_slimBand, samplingRate)
     
     % "Beat Localization" in the Papini paper, Figure 1
     
-    % TODO (Alex)
+    % minimum possible time period between heartbeats [s]
+    max_freq = 210/60; % maximum expectable frequency is 210 bpm -> converted to Hz
+    min_RRinterval = 1/max_freq;
+    
+    time = ((1:size(PPG_slimBand, 2)))/samplingRate;
+    
+    % find minima
+    PPG_slimBand_inv = PPG_slimBand*-1;
+%     figure;
+%     hold on;
+%     plot(time, PPG_wideBand);
+%     findpeaks(PPG_slimBand, time, 'MinPeakDistance', min_RRinterval);
+%     findpeaks(PPG_slimBand_inv, time, 'MinPeakDistance', min_RRinterval);
+%     hold off;
+    [peak_vals, peak_locs, peak_widths, peak_prominences] = findpeaks(PPG_slimBand_inv, time, 'MinPeakDistance', min_RRinterval);
+    beatTimes = peak_locs; % time of detected beats (in seconds after the start of the signal)
+    
+end
+
+function PP = segmentation(PPG_slimBand, PPG_wideBand, beatTimes, time)
+    
+    % "Segmentation" in the Papini paper, Figure 1
+    
+    beatLocs = find(ismember(time, beatTimes));
+    start = 1;
+    for i = 1 : size(beatLocs, 2)
+       
+        segment_slimBand = PPG_slimBand(start : beatLocs(1, i));
+        segment_wideBand = PPG_wideBand(start : beatLocs(1, i));
+        figure;
+        hold on;
+        plot(segment_slimBand);
+        plot(segment_wideBand);
+        hold off;
+        PP{i, :} = segment_wideBand;
+        start = beatLocs(1, i);
+        
+    end
     
 end
 
