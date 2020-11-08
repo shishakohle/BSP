@@ -26,8 +26,7 @@ clear edfFilename;
 [hdr, record] = edfread(filepath);
 
 % besser implementieren - wie in feedback damals
-rawPPGsignal   = record(2,:);
-samplingRate = hdr.frequency(2);
-
+[hdr, rawPPGsignal] = edfread(filepath,'targetSignals','wrist_ppg');
+samplingRate = hdr.samples/hdr.duration;
 
 pqi = PQI(rawPPGsignal, samplingRate, record);
