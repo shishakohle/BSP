@@ -115,11 +115,19 @@ function [PP_Temp, AmplitudeCorrectionFactors, PP_PQI, BeatTimes] = ...
     % "PPG segmentation, beat localization" in the Papini paper, Figure 1
     
     [BeatTimes, time] = beatLocalization(PPG_slimBand, samplingRate);    
-    PP_wideBand = segmentation(PPG_slimBand, PPG_wideBand, BeatTimes, time); % über beat times segementieren
-    [PP_Temp, AmplitudeCorrectionFactors, PP_PQI] = pulseNormalization(...
+    PP_wideBand = segmentation(PPG_slimBand, PPG_wideBand, BeatTimes, time); % ï¿½ber beat times segementieren
+    [PP_Temp, PPamplitudes, PP_PQI] = pulseNormalization(...
         PP_wideBand);
     
-
+    % "To derive the correction factors, a time series comprising all the
+    %  amplitudes obtained in (7) is stored. First, the algorithm removes
+    %  from the amplitude time series all elements that have a value 50%
+    %  higher or lower than the previous or the following value. Then the
+    %  clipped amplitude time series is interpolated at 4 Hz using a cubic
+    %  spline interpolation and filtered with a 3rd-order zero-phase
+    %  low-pass Butterworth filter with a cut-off frequency of 1.5 Hz.
+    %  (...) Finally, the filtered signal is resampled at the same time
+    %  locations of the original amplitude time series."
 
 end
 
@@ -196,12 +204,14 @@ function PP = segmentation(PPG_slimBand, PPG_wideBand, beatTimes, time)
     
 end
 
-function [PP_Temp, AmplitudeCorrectionFactors, PP_PQI] = ...
+function [PP_Temp, PP_Amplitude, PP_PQI] = ...
     pulseNormalization(PP)
     
     % "Pulse normalization" in the Papini paper, Figure 1
     
-    % TODO (Ingo)
+    PP_Temp   = PP_Temp(PP);
+    PPamplitude = PPamplitude(PP);
+    PP_PQI    = PP_PQI (PP);
     
 end
 
@@ -209,16 +219,6 @@ end
 % Functions representing formulas    %
 % in Figure 1 of the Papini paper    %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-function PP_Temp = PP_Temp(PP)
-    % Forumula 9 in the Papini paper
-    PP_Temp = ( PP - PPshift(PP) ) / PPamplitude(PP);
-end
-
-function PP_PQI = PP_PQI(PP)
-    % Formula 10 in the Papini paer
-    PP_PQI = PP - PPshift(PP);
-end
 
 function PPamplitude = PPamplitude(PP)
     % Formula 7 in the Papini paper
@@ -228,4 +228,14 @@ end
 function PPshift = PPshift(PP)
     % Formula 8 in the Papini paper
     PPshift = ( max(PP) + min(PP) ) / 2;
+end
+
+function PP_Temp = PP_Temp(PP)
+    % Forumula 9 in the Papini paper
+    PP_Temp = ( PP - PPshift(PP) ) / PPamplitude(PP);
+end
+
+function PP_PQI = PP_PQI(PP)
+    % Formula 10 in the Papini paer
+    PP_PQI = PP - PPshift(PP);
 end
