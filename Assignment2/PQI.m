@@ -46,64 +46,7 @@ function [PPG_slimBand, PPG_wideBand] = preprocessing(rawPPGsignal, ...
     % phase correct wide band to slim band
     [c, lags] = xcorr(PPG_slimBand, PPG_wideBand);               % compute cross correlation; keep lags vector
     [~, iLag] = max(c(find(lags==0) : end));  % find the max in one-sided
-    PPG_wideBand_phaseCorrect = circshift(PPG_wideBand, [0 iLag]);           % correct for the shift
-    
-    
-    % optionally plot each signal - only for code testing, exclude in the
-    % final version
-    
-    % choose on an EDF subfolder:
-    % edfSubfolder = ".";
-    edfSubfolder = "edf";
-
-    % choose on an EDF file:
-    edfFilename  = "s1_high_resistance_bike.edf";
-    % edfFilename  = ""; % TODO add further files
-    % edfFilename  = "";
-
-    % choose on the path notion of your operating system:
-    % uncomment the next line for MS Windows
-    filepath = edfSubfolder + "\" + edfFilename;
-    % uncomment the next line for Linux distributions / Mac OS X
-    % filepath = edfSubfolder + "/" + edfFilename;
-
-    clear edfSubfolder;
-    clear edfFilename;
-    
-    [hdr, record] = edfread(filepath);
-
-    wrist_ppg   = record(2,:);
-    f_sample = hdr.frequency(2);
-
-    time = ((1:size(record, 2)))/f_sample;
-
-    figure;
-    hold on;
-    subplot(3, 1, 1);
-    plot(time, wrist_ppg);
-    title('Unfiltered');
-    xlabel('time [s]');
-    ylabel('Amplitude [?]');
-    subplot(3, 1, 2);
-    plot(time, PPG_slimBand);
-    title('slimBP filtered');
-    xlabel('time [s]');
-    ylabel('Amplitude [?]');
-    subplot(3, 1, 3);
-    plot(time, PPG_wideBand);
-    title('wideBP filtered');
-    xlabel('time [s]');
-    ylabel('Amplitude [?]');
-    hold off;
-    
-    figure;
-    hold on;
-    plot(time, wrist_ppg);
-    plot(time, PPG_slimBand);
-    plot(time, PPG_wideBand);
-    plot(time, PPG_wideBand_phaseCorrect, 'g');
-    hold off;
-    
+    PPG_wideBand_phaseCorrect = circshift(PPG_wideBand, [0 iLag]);           % correct for the shift    
     PPG_wideBand = PPG_wideBand_phaseCorrect;
 
 end
@@ -199,11 +142,11 @@ function PP = segmentation(PPG_slimBand, PPG_wideBand, beatTimes, time)
        
         segment_slimBand = PPG_slimBand(start : beatLocs(1, i));
         segment_wideBand = PPG_wideBand(start : beatLocs(1, i));
-        figure;
-        hold on;
-        plot(segment_slimBand);
-        plot(segment_wideBand);
-        hold off;
+%         figure;
+%         hold on;
+%         plot(segment_slimBand);
+%         plot(segment_wideBand);
+%         hold off;
         PP{i, :} = segment_wideBand;
         start = beatLocs(1, i);
         
@@ -211,13 +154,13 @@ function PP = segmentation(PPG_slimBand, PPG_wideBand, beatTimes, time)
     
 end
 
-function [PP_Temp, PPamplitude, PP_PQI] = ...
+function [PP_Temp, PP_amplitude, PP_PQI] = ...
     pulseNormalization(PP)
     
     % "Pulse normalization" in the Papini paper, Figure 1
     
     PP_Temp     = PPtemp   (PP);
-    PPamplitude = amplitude(PP);
+    PP_amplitude = PPamplitude(PP);
     PP_PQI      = PPpqi    (PP);
     
 end
@@ -227,22 +170,36 @@ end
 % in Figure 1 of the Papini paper    %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function amplitude = PPamplitude(PP)
+function PP_amplitude = PPamplitude(PP)
     % Formula 7 in the Papini paper
-    PPamplitude = abs( max(PP) - min(PP) );
+    for i = 1 : length(PP)
+        PP_amplitude(i) = abs( max(PP{i}) - min(PP{i}) );
+    end
 end
 
-function PPshift = PPshift(PP)
+function PP_shift = PPshift(PP)
     % Formula 8 in the Papini paper
-    PPshift = ( max(PP) + min(PP) ) / 2;
+    for i = 1 : length(PP)
+        PP_shift(i) = ( max(PP{i}) + min(PP{i}) ) / 2;
+    end
 end
 
 function PP_Temp = PPtemp(PP)
     % Forumula 9 in the Papini paper
-    PP_Temp = ( PP - PPshift(PP) ) / PPamplitude(PP);
+    PP_shift = PPshift(PP);
+    PP_amplitude = PPamplitude(PP);
+    for i = 1 : length(PP)
+        PP_cell = PP{i};
+        PP_cellminusshift = PP_cell - PP_shift(1, i);
+        PP_Temp{i, :} = PP_cellminusshift ./ PP_amplitude(1, i);
+    end
 end
 
 function PP_PQI = PPpqi(PP)
-    % Formula 10 in the Papini paer
-    PP_PQI = PP - PPshift(PP);
+    % Formula 10 in the Papini paper
+    PP_shift = PPshift(PP);
+    for i = 1 : length(PP)
+        PP_cell = PP{i};
+        PP_PQI{i, :} = PP_cell - PP_shift(1, i);
+    end
 end
