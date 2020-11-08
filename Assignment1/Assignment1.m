@@ -52,10 +52,8 @@ features = extract_basic_features(filepath);
 function features = extract_basic_features(filepath)
 
     %% Read header and rawdata from the EDF file
-    [hdr, record] = edfread(filepath);
-    
-    wrist_ppg   = record(2,:);
-    f_sample = hdr.frequency(2);
+    [hdr, wrist_ppg] = edfread(filepath,'targetSignals','wrist_ppg');
+    f_sample = hdr.samples/hdr.duration;
     
     % plot original signal
     % figure;
@@ -76,7 +74,7 @@ function features = extract_basic_features(filepath)
     fpass = [min_freq max_freq]/(f_sample*0.5); 
     [b, a] = butter(2, fpass, 'bandpass'); % 2nd order BP seems to serve the purpose best
     wrist_ppg_filtered = filter(b, a, wrist_ppg);
-    time = ((1:size(record, 2)))/f_sample;
+    time = ((1:size(wrist_ppg, 2)))/f_sample;
     
     % optionally plot unfiltered and filtered signal
 %     figure;
