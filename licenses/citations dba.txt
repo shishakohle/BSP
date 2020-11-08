@@ -1,0 +1,27 @@
+@ARTICLE{Petitjean2011-DBA,
+  title={A global averaging method for dynamic time warping, with applications to clustering},
+  author={Petitjean, Fran{\c{c}}ois and Ketterlin, Alain and Gan{\c{c}}arski, Pierre},
+  journal={Pattern Recognition},
+  volume={44},
+  number={3},
+  pages={678--693},
+  year={2011},
+  publisher={Elsevier}
+}
+
+@INPROCEEDINGS{Petitjean2014-ICDM-2,
+  title={Dynamic time warping averaging of time series allows faster and more accurate classification},
+  author={Petitjean, Fran{\c{c}}ois and Forestier, Germain and Webb, Geoffrey I and Nicholson, Ann E and Chen, Yanping and Keogh, Eamonn},
+  booktitle={Data Mining (ICDM), 2014 IEEE International Conference on},
+  pages={470--479},
+  year={2014},
+  organization={IEEE}
+}
+
+@INPROCEEDINGS{Forestier2017-ICDM,
+  title={Generating synthetic time series to augment sparse datasets},
+  author={Forestier, Germain and Petitjean, Fran{\c{c}}ois and Dau, Hoang Anh and Webb, Geoffrey I and Keogh, Eamonn},
+  booktitle={Data Mining (ICDM), 2017 IEEE International Conference on},
+  pages={865--870},
+  year={2017},
+  organization={IEEE}
