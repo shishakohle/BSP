@@ -8,12 +8,13 @@ function [matrix, pulseWaveTemplate] = PQI (rawPPGsignal, samplingRate, ...
         samplingRate);
     
     % call PPG segmentation, beat localization
-    [PP_Temp, AmplitudeCorrectionFactors, PP_PQI, BeatTimes] = ...
+    [PPs_Temp, AmplitudeCorrectionFactors, PP_PQI, BeatTimes] = ...
         PPGsegmentationAndBeatLocalization(PPG_slimBand, PPG_wideBand, ...
         samplingRate, record);
     
     % call Template creation
-    Temp_Ad = templateCreation(PP_Temp, AmplitudeCorrectionFactors);
+    Temps_Ad = templateCreation(PPs_Temp, samplingRate, ...
+        AmplitudeCorrectionFactors);
     
     % call Pulse-Template comparison
     PulseQualityIndex = pulseTemplateComparision(PP_PQI, Temp_Ad);
@@ -138,11 +139,40 @@ function [PP_Temp, AmplitudeCorrectionFactors, PP_PQI, BeatTimes] = ...
 
 end
 
-function Temp_Ad = templateCreation(PP_Temp, AmplitudeCorrectionFactors)
+function Temps_Ad = templateCreation(PPs_Temp, f_sample, ...
+    AmplitudeCorrectionFactors)
     
-    % "Template creation" in the Papini paper, Figure 1
+    % "Template creation" in the Papini paper, Figure 1 and Figure 3
     
-    % TODO (Ingo)
+    % "For this reason, our algorithm calculates the pulse template by
+    %  means of DBA (Petitjean et al 2014). This allows the time series to
+    %  be averaged by iteratively decreasing the DTW distance between an
+    %  initial template and each individual pulse (figure 3). In each
+    %  iteration, the resulting averaged time series is used as the initial
+    %  template for the next iteration. The DBA is initialized with the
+    %  medoid of the PPs_Temp as initial template, and this initial
+    %  template is refined during five iterations (Petitjean et al 2014).
+    %  The number of iterations is chosen empirically to ensure the
+    %  computation of a pulse template with a correct morphological
+    %  representation of the pulses, in an efficient computation time.
+    %  The resulting pulse template is filtered using a 3rd-order low-pass
+    %  Butterworth filter with a cut-off frequency of 10 Hz to remove
+    %  high-frequency components introduced by the DBA. This guarantees
+    %  that the template has the same frequency components as the PPG
+    %  segments used to obtain it (PPs_Temp) and of the PPG segments used
+    %  to calculate the quality index (PPs_PQI).
+    
+    % medoid calculation done by DBA():
+    temporaryTemplate = DBA(PPs_Temp); % function in DBA.m
+    % Papini intereates 5 times, DBA() 15 times!
+    
+    Template = lowpassFilter(temporaryTemplate, f_sample, 10);
+    
+    % calculate all adjusted templates
+    % "the adjusted templates (Temp Ad s) are obtained by multiplying the
+    %  template by the corresponding correction factors"
+    Temps_Ad = Template .* AmplitudeCorrectionFactors;
+    % TODO is .* accurate?
     
 end
 
@@ -163,6 +193,12 @@ function filtered = bandpassFilter(raw, f_min, f_max, f_sample)
     % "Bandpass filter" in the Papini paper, Figure 1
     f_pass = [f_min f_max] / (0.5 * f_sample);
     [b, a] = butter(3, f_pass, 'bandpass');
+    filtered = filter(b, a, raw);
+end
+
+function filtered = lowpassFilter(raw, f_sample, f_cutoff)
+    % "Lowpass filter" in the Papini paper, Figure 3
+    [b, a] = butter( 3, f_cutoff / (f_sample/2) );
     filtered = filter(b, a, raw);
 end
 
