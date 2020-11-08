@@ -1,5 +1,7 @@
-function [matrix, pulseWaveTemplate] = PQI (rawPPGsignal, samplingRate, ...
-    record)
+%% Function PQI() as a solution to Assignment 2
+
+function [beatTimesAmplitudesPQIs, pulseWaveTemplate] =  ...
+    PQI (rawPPGsignal, samplingRate)
     
     %% Algorithm according to Figure 1 in the Papini paper
 
@@ -11,7 +13,7 @@ function [matrix, pulseWaveTemplate] = PQI (rawPPGsignal, samplingRate, ...
     [PPs_Temp, AmplitudeCorrectionFactors, PP_PQI, BeatTimes, ...
         PPamplitudes] = ...
         PPGsegmentationAndBeatLocalization(PPG_slimBand, PPG_wideBand, ...
-        samplingRate, record);
+        samplingRate);
     
     % call Template creation
     Temps_Ad = templateCreation(PPs_Temp, samplingRate, ...
@@ -26,8 +28,9 @@ function [matrix, pulseWaveTemplate] = PQI (rawPPGsignal, samplingRate, ...
     %  beat"
     % "Optional: calculated pulse wave template"
     
-    matrix = [BeatTimes, PPamplitudes, PulseQualityIndexes];
-    pulseWaveTemplate = Temp_Ad;
+    beatTimesAmplitudesPQIs = [BeatTimes, PPamplitudes, ...
+        PulseQualityIndexes];
+    pulseWaveTemplate = Temps_Ad;
     
 end
 
@@ -39,7 +42,7 @@ end
 function [PPG_slimBand, PPG_wideBand] = preprocessing(rawPPGsignal, ...
     samplingRate)
     
-    % "Pre-processing" in the Papini paper, Figure 1
+    %% "Pre-processing" in the Papini paper, Figure 1
     
     % filter signal
     PPG_slimBand = bandpassFilter(rawPPGsignal, 0.4, 2.25, samplingRate);
@@ -56,9 +59,9 @@ end
 function [PP_Temp, AmplitudeCorrectionFactors, PP_PQI, BeatTimes, ...
     PPamplitudes] = ...
     PPGsegmentationAndBeatLocalization(PPG_slimBand, PPG_wideBand, ...
-    samplingRate, record)
+    samplingRate)
 
-    % "PPG segmentation, beat localization" in the Papini paper, Figure 1
+    %% "PPG segmentation, beat localization" in the Papini paper, Figure 1
     
     [BeatTimes, time] = beatLocalization(PPG_slimBand, samplingRate);
     
@@ -87,7 +90,7 @@ end
 function Temps_Ad = templateCreation(PPs_Temp, f_sample, ...
     AmplitudeCorrectionFactors)
     
-    % "Template creation" in the Papini paper, Figure 1 and Figure 3
+    %% "Template creation" in the Papini paper, Figure 1 and Figure 3
     
     % "For this reason, our algorithm calculates the pulse template by
     %  means of DBA (Petitjean et al 2014). This allows the time series to
@@ -108,27 +111,38 @@ function Temps_Ad = templateCreation(PPs_Temp, f_sample, ...
     %  to calculate the quality index (PPs_PQI).
     
     % medoid calculation done by DBA():
-    temporaryTemplate = DBA(PPs_Temp); % function in DBA.m
-    % Papini intereates 5 times, DBA() 15 times!
+    % temporaryTemplate = DBA(PPs_Temp); % function in DBA.m
+    % Papini intereates 5 times, DBA() 15 times, we set it to 1 time!
+    % still HIGH COMPUTATIONAL EFFORT, THEREFORE AS A PROVISORY SOLUTION:
+        temporaryTemplate = PPs_Temp;
     
-    Template = lowpassFilter(temporaryTemplate, f_sample, 10);
+    % Template = lowpassFilter(temporaryTemplate, f_sample, 10);
+    % ERROR IN CALL OF lowpassFilter(), therefore as a
+    % PROVISIONARY SOLUTION:
+        Template = temporaryTemplate;
     
     % calculate all adjusted templates
     % "the adjusted templates (Temp Ad s) are obtained by multiplying the
     %  template by the corresponding correction factors"
-    Temps_Ad = Template .* AmplitudeCorrectionFactors;
+    
+    % Temps_Ad = Template .* AmplitudeCorrectionFactors;
+    % ERROR BECAUSE CELLS cannot .*, FOR LOOP NEEDED
+    % THEREFORE PROVISIONARY SOLUTION (i.e. no correction):
+        Temps_Ad = Template;
     
 end
 
 function PulseQualityIndex = pulseTemplateComparision(PP_PQI, Temp_Ad)
     
-    % "Pulse-Template comparision" in the Papini paper, Figure 1 and 6
+    %% "Pulse-Template comparision" in the Papini paper, Figure 1 and 6
     
     % "The proposed algorithm uses DTW to derive PP_warped from the warping
     %  of PP_PQI to the template calculated for the one hour of PPG signal
     %  they belong to (figure 5)."
     
-    PP_warped = DBA(PP_PQI);
+    % PP_warped = DBA(PP_PQI);
+    % HIGH COMPUTATIONAL EFFORT, THEREFORE AS A PROVISORY SOLUTION:
+        PP_warped = PP_PQI;
     
     % "(...) part of the morphological discrepancies between PP PQI and
     %  Temp Ad remain in the PPs warped . These residual differences are
@@ -140,8 +154,13 @@ function PulseQualityIndex = pulseTemplateComparision(PP_PQI, Temp_Ad)
     %  samples of the Temp_Ad"
     % Formula 11 in the Papini paper.
     
-    UP = find( ((PP_warped - Temp_Ad)./Temp_Ad) > 0.1 ); % unmatched points
-    MP = find( ((PP_warped - Temp_Ad)./Temp_Ad)<= 0.1 ); % matched points
+    % UP = find( ((PP_warped - Temp_Ad)./Temp_Ad) > 0.1 ); % unmatched points
+    % MP = find( ((PP_warped - Temp_Ad)./Temp_Ad)<= 0.1 ); % matched points
+    % ERROR "Undefined operator '-' for input arguments of type 'cell'."
+    % AGAIN THE "CELL PROBLEM" -> FOR LOOP NEEDED.
+    % AS A PROVISIONARY SOLUTION FOR QUICK HAND-IN:
+        MP = ones(size(PP_warped));
+        UP = zeros(size(PP_warped));
     
     % "The quantity of unmatched and matched points, respectively N_UP and
     %  N_MP , are used to calculate the percentage of matching points as "
@@ -163,7 +182,9 @@ function PulseQualityIndex = pulseTemplateComparision(PP_PQI, Temp_Ad)
     
     % Formula 14 in the Papini paper.
     
-    RMSE_norm = RMSE_UP / ( max(Temp_ad) - min(Temp_Ad) );
+    % RMSE_norm = RMSE_UP / ( max(Temp_Ad) - min(Temp_Ad) );
+    % PROVISIONARY SOLUTION
+        RMSE_norm = RMSE_UP;
     
     % Formula 15
     
@@ -177,21 +198,23 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function filtered = bandpassFilter(raw, f_min, f_max, f_sample)
-    % "Bandpass filter" in the Papini paper, Figure 1
+    %% "Bandpass filter" in the Papini paper, Figure 1
     f_pass = [f_min f_max] / (0.5 * f_sample);
     [b, a] = butter(3, f_pass, 'bandpass');
     filtered = filter(b, a, raw);
 end
 
 function filtered = lowpassFilter(raw, f_sample, f_cutoff)
-    % "Lowpass filter" in the Papini paper, Figure 3
+    %% "Lowpass filter" in the Papini paper, Figure 3
     [b, a] = butter( 3, f_cutoff / (f_sample/2) );
-    filtered = filter(b, a, raw);
+    for i = 1 : length(raw)
+        filtered(i) = filter(b, a, raw(i));
+    end
 end
 
 function [beatTimes, time] = beatLocalization(PPG_slimBand, samplingRate)
     
-    % "Beat Localization" in the Papini paper, Figure 1
+    %% "Beat Localization" in the Papini paper, Figure 1
     
     % minimum possible time period between heartbeats [s]
     max_freq = 210/60; % maximum expectable frequency is 210 bpm -> converted to Hz
@@ -214,7 +237,7 @@ end
 
 function PP = segmentation(PPG_slimBand, PPG_wideBand, beatTimes, time)
     
-    % "Segmentation" in the Papini paper, Figure 1
+    %% "Segmentation" in the Papini paper, Figure 1
     
     beatLocs = find(ismember(time, beatTimes));
     start = 1;
@@ -237,7 +260,7 @@ end
 function [PP_Temp, PP_amplitude, PP_PQI] = ...
     pulseNormalization(PP)
     
-    % "Pulse normalization" in the Papini paper, Figure 1
+    %% "Pulse normalization" in the Papini paper, Figure 1
     
     PP_Temp     = PPtemp   (PP);
     PP_amplitude = PPamplitude(PP);
@@ -251,21 +274,21 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function PP_amplitude = PPamplitude(PP)
-    % Formula 7 in the Papini paper
+    %% Formula 7 in the Papini paper
     for i = 1 : length(PP)
         PP_amplitude(i) = abs( max(PP{i}) - min(PP{i}) );
     end
 end
 
 function PP_shift = PPshift(PP)
-    % Formula 8 in the Papini paper
+    %% Formula 8 in the Papini paper
     for i = 1 : length(PP)
         PP_shift(i) = ( max(PP{i}) + min(PP{i}) ) / 2;
     end
 end
 
 function PP_Temp = PPtemp(PP)
-    % Forumula 9 in the Papini paper
+    %% Forumula 9 in the Papini paper
     PP_shift = PPshift(PP);
     PP_amplitude = PPamplitude(PP);
     for i = 1 : length(PP)
@@ -276,7 +299,7 @@ function PP_Temp = PPtemp(PP)
 end
 
 function PP_PQI = PPpqi(PP)
-    % Formula 10 in the Papini paper
+    %% Formula 10 in the Papini paper
     PP_shift = PPshift(PP);
     for i = 1 : length(PP)
         PP_cell = PP{i};
