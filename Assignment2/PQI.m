@@ -17,7 +17,7 @@ function [matrix, pulseWaveTemplate] = PQI (rawPPGsignal, samplingRate, ...
         AmplitudeCorrectionFactors);
     
     % call Pulse-Template comparison
-    PulseQualityIndex = pulseTemplateComparision(PP_PQI, Temp_Ad);
+    PulseQualityIndexes = pulseTemplateComparision(PP_PQI, Temp_Ad);
     
     %% assemble return values according to Assignment 2 task description:
     
@@ -25,8 +25,8 @@ function [matrix, pulseWaveTemplate] = PQI (rawPPGsignal, samplingRate, ...
     %  beat"
     % "Optional: calculated pulse wave template"
     
-    matrix = [PulseQualityIndex]; % TODO: timing, amplitude
-    pulseWaveTemplate = Temp_Ad; % TODO: is this accurate?
+    matrix = [PulseQualityIndexes]; % TODO: timing, amplitude
+    pulseWaveTemplate = Temp_Ad;
     
 end
 
@@ -172,15 +172,57 @@ function Temps_Ad = templateCreation(PPs_Temp, f_sample, ...
     % "the adjusted templates (Temp Ad s) are obtained by multiplying the
     %  template by the corresponding correction factors"
     Temps_Ad = Template .* AmplitudeCorrectionFactors;
-    % TODO is .* accurate?
     
 end
 
 function PulseQualityIndex = pulseTemplateComparision(PP_PQI, Temp_Ad)
     
-    % "Pulse-Template comparision" in the Papini paper, Figure 1
+    % "Pulse-Template comparision" in the Papini paper, Figure 1 and 6
     
-    % TODO (Ingo)
+    % "The proposed algorithm uses DTW to derive PP_warped from the warping
+    %  of PP_PQI to the template calculated for the one hour of PPG signal
+    %  they belong to (figure 5)."
+    
+    PP_warped = DBA(PP_PQI);
+    
+    % "(...) part of the morphological discrepancies between PP PQI and
+    %  Temp Ad remain in the PPs warped . These residual differences are
+    %  used by the algorithm to calculate the quality index (PQI) of each
+    %  PPG pulse."
+    
+    % "First, the algorithm finds the indices of each sample of PP_warped
+    %  with a difference higher than 10% with respect to the corresponding
+    %  samples of the Temp_Ad"
+    % Formula 11 in the Papini paper.
+    
+    UP = find( ((PP_warped - Temp_Ad)./Temp_Ad) > 0.1 ); % unmatched points
+    MP = find( ((PP_warped - Temp_Ad)./Temp_Ad)<= 0.1 ); % matched points
+    
+    % "The quantity of unmatched and matched points, respectively N_UP and
+    %  N_MP , are used to calculate the percentage of matching points as "
+    % Formula 12 in the Papini paper.
+    
+    number_MP = sum(MP);
+    number_UP = sum(UP);
+    percentage_MP = number_MP / (number_MP+number_UP);
+    
+    % "The second step consists in calculating the root mean square error
+    %  of the unmatched points in respect to Temp_Ad"
+    % Formula 13 in the Papini paper.
+    
+    if number_UP == 0
+        RMSE_UP = 0;
+    else
+        RMSE_UP = ( Temp_Ad(UP) - PP_warped(UP) )^2 ./ number_UP;
+    end
+    
+    % Formula 14 in the Papini paper.
+    
+    RMSE_norm = RMSE_UP / ( max(Temp_ad) - min(Temp_Ad) );
+    
+    % Formula 15
+    
+    PulseQualityIndex = max( 0.1 - RMSE_norm/percentage_MP );
     
 end
 
