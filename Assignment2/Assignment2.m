@@ -23,9 +23,7 @@ clear edfSubfolder;
 clear edfFilename;
 
 %% aquire signal
-[hdr, record] = edfread(filepath);
-
-% besser implementieren - wie in feedback damals
+[hdr, record] = edfread(filepath); %% TODO record needed?
 [hdr, rawPPGsignal] = edfread(filepath,'targetSignals','wrist_ppg');
 samplingRate = hdr.samples/hdr.duration;
 
