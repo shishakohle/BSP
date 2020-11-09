@@ -46,14 +46,13 @@ function [PPG_slimBand, PPG_wideBand] = preprocessing(rawPPGsignal, ...
     
     % filter signal
     PPG_slimBand = bandpassFilter(rawPPGsignal, 0.4, 2.25, samplingRate);
-    PPG_wideBand = bandpassFilter(rawPPGsignal, 0.4, 10.0, samplingRate);
+    PPG_wideBand = bandpassFilter(rawPPGsignal, 0.4, 10.0, samplingRate);    
     
-    % phase correct wide band to slim band
-    [c, lags] = xcorr(PPG_slimBand, PPG_wideBand);               % compute cross correlation; keep lags vector
-    [~, iLag] = max(c(find(lags==0) : end));  % find the max in one-sided
-    PPG_wideBand_phaseCorrect = circshift(PPG_wideBand, [0 iLag]);           % correct for the shift    
-    PPG_wideBand = PPG_wideBand_phaseCorrect;
-
+    % phase correct wide band to slim band - obsolete because of filtfilt
+%     [c, lags] = xcorr(PPG_slimBand, PPG_wideBand);               % compute cross correlation; keep lags vector
+%     [~, iLag] = max(c(find(lags==0) : end));  % find the max in one-sided
+%     PPG_wideBand_phaseCorrect = circshift(PPG_wideBand, [0 iLag]);           % correct for the shift    
+%     PPG_wideBand = PPG_wideBand_phaseCorrect;
 end
 
 function [PP_Temp, AmplitudeCorrectionFactors, PP_PQI, BeatTimes, ...
@@ -201,7 +200,7 @@ function filtered = bandpassFilter(raw, f_min, f_max, f_sample)
     %% "Bandpass filter" in the Papini paper, Figure 1
     f_pass = [f_min f_max] / (0.5 * f_sample);
     [b, a] = butter(3, f_pass, 'bandpass');
-    filtered = filter(b, a, raw);
+    filtered = filtfilt(b, a, raw);
 end
 
 function filtered = lowpassFilter(raw, f_sample, f_cutoff)
@@ -211,7 +210,7 @@ function filtered = lowpassFilter(raw, f_sample, f_cutoff)
         filtered(i) = filter(b, a, raw(i));
     end
 end
-
+%% FIR - filtfilt
 function [beatTimes, time] = beatLocalization(PPG_slimBand, samplingRate)
     
     %% "Beat Localization" in the Papini paper, Figure 1
@@ -226,11 +225,11 @@ function [beatTimes, time] = beatLocalization(PPG_slimBand, samplingRate)
     PPG_slimBand_inv = PPG_slimBand*-1;
 %     figure;
 %     hold on;
-%     plot(time, PPG_wideBand);
 %     findpeaks(PPG_slimBand, time, 'MinPeakDistance', min_RRinterval);
 %     findpeaks(PPG_slimBand_inv, time, 'MinPeakDistance', min_RRinterval);
 %     hold off;
-    [peak_vals, peak_locs, peak_widths, peak_prominences] = findpeaks(PPG_slimBand_inv, time, 'MinPeakDistance', min_RRinterval);
+    [peak_vals, peak_locs, peak_widths, peak_prominences] = ...
+    findpeaks(PPG_slimBand_inv, time, 'MinPeakDistance', min_RRinterval, 'MinPeakHeight', 0); % with negativity condition as in formula 1 in paper here >0 because of inv. sig.
     beatTimes = peak_locs; % time of detected beats (in seconds after the start of the signal)
     
 end
