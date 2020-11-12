@@ -55,7 +55,7 @@ function [PPG_slimBand, PPG_wideBand] = preprocessing(rawPPGsignal, ...
 %     PPG_wideBand = PPG_wideBand_phaseCorrect;
 end
 
-function [PP_Temp, AmplitudeCorrectionFactors, PP_PQI, BeatTimes, ...
+function [PP_Temp, AmplitudeCorrectionFactor, PP_PQI, BeatTimes, ...
     PPamplitudes] = ...
     PPGsegmentationAndBeatLocalization(PPG_slimBand, PPG_wideBand, ...
     samplingRate)
@@ -71,23 +71,12 @@ function [PP_Temp, AmplitudeCorrectionFactors, PP_PQI, BeatTimes, ...
     [PP_Temp, PPamplitudes, PP_PQI] = pulseNormalization(...
         PP_wideBand);
     
-    % "To derive the correction factors, a time series comprising all the
-    %  amplitudes obtained in (7) is stored. First, the algorithm removes
-    %  from the amplitude time series all elements that have a value 50%
-    %  higher or lower than the previous or the following value. Then the
-    %  clipped amplitude time series is interpolated at 4 Hz using a cubic
-    %  spline interpolation and filtered with a 3rd-order zero-phase
-    %  low-pass Butterworth filter with a cut-off frequency of 1.5 Hz.
-    %  (...) Finally, the filtered signal is resampled at the same time
-    %  locations of the original amplitude time series."
-    
-    % skipped for now
-    AmplitudeCorrectionFactors = PPamplitudes;
+    AmplitudeCorrectionFactor = amplitudeCorrection(PPamplitudes);
 
 end
 
 function Temps_Ad = templateCreation(PPs_Temp, f_sample, ...
-    AmplitudeCorrectionFactors)
+    AmplitudeCorrectionFactor)
     
     %% "Template creation" in the Papini paper, Figure 1 and Figure 3
     
@@ -110,24 +99,22 @@ function Temps_Ad = templateCreation(PPs_Temp, f_sample, ...
     %  to calculate the quality index (PPs_PQI).
     
     % medoid calculation done by DBA():
-    % temporaryTemplate = DBA(PPs_Temp); % function in DBA.m
+%     temporaryTemplate = DBA(PPs_Temp); % function in DBA.m
     % Papini intereates 5 times, DBA() 15 times, we set it to 1 time!
-    % still HIGH COMPUTATIONAL EFFORT, THEREFORE AS A PROVISORY SOLUTION:
-        temporaryTemplate = PPs_Temp;
+    % still HIGH COMPUTATIONAL EFFORT, THEREFORE AS A PROVISORY SOLUTION do it once and then use from workspace:
+    load('DBAoutput.mat', 'average');
+    temporaryTemplate = average;
     
-    % Template = lowpassFilter(temporaryTemplate, f_sample, 10);
+    Template = lowpassFilter(temporaryTemplate, f_sample, 10);
     % ERROR IN CALL OF lowpassFilter(), therefore as a
     % PROVISIONARY SOLUTION:
-        Template = temporaryTemplate;
+%         Template = temporaryTemplate;
     
     % calculate all adjusted templates
     % "the adjusted templates (Temp Ad s) are obtained by multiplying the
     %  template by the corresponding correction factors"
     
-    % Temps_Ad = Template .* AmplitudeCorrectionFactors;
-    % ERROR BECAUSE CELLS cannot .*, FOR LOOP NEEDED
-    % THEREFORE PROVISIONARY SOLUTION (i.e. no correction):
-        Temps_Ad = Template;
+    Temps_Ad = Template .* AmplitudeCorrectionFactor;
     
 end
 
@@ -139,9 +126,10 @@ function PulseQualityIndex = pulseTemplateComparision(PP_PQI, Temp_Ad)
     %  of PP_PQI to the template calculated for the one hour of PPG signal
     %  they belong to (figure 5)."
     
-    % PP_warped = DBA(PP_PQI);
-    % HIGH COMPUTATIONAL EFFORT, THEREFORE AS A PROVISORY SOLUTION:
-        PP_warped = PP_PQI;
+%     PP_warped = DBA(PP_PQI);
+    % HIGH COMPUTATIONAL EFFORT, THEREFORE AS A PROVISORY SOLUTION do it once and then use from workspace:
+    load('DBAoutput.mat', 'PP_warped');
+%         PP_warped = PP_PQI;
     
     % "(...) part of the morphological discrepancies between PP PQI and
     %  Temp Ad remain in the PPs warped . These residual differences are
@@ -205,12 +193,12 @@ end
 
 function filtered = lowpassFilter(raw, f_sample, f_cutoff)
     %% "Lowpass filter" in the Papini paper, Figure 3
-    [b, a] = butter( 3, f_cutoff / (f_sample/2) );
+    [b, a] = butter(3, f_cutoff / (f_sample/2) );
     for i = 1 : length(raw)
         filtered(i) = filter(b, a, raw(i));
     end
 end
-%% FIR - filtfilt
+
 function [beatTimes, time] = beatLocalization(PPG_slimBand, samplingRate)
     
     %% "Beat Localization" in the Papini paper, Figure 1
@@ -304,4 +292,20 @@ function PP_PQI = PPpqi(PP)
         PP_cell = PP{i};
         PP_PQI{i, :} = PP_cell - PP_shift(1, i);
     end
+end
+
+function AmplitudeCorrectionFactor = amplitudeCorrection(PPamplitudes);
+
+    % "To derive the correction factors, a time series comprising all the
+    %  amplitudes obtained in (7) (--> PPamplitudes is stored). First, the algorithm removes
+    %  from the amplitude time series all elements that have a value 50%
+    %  higher or lower than the previous or the following value. Then the
+    %  clipped amplitude time series is interpolated at 4 Hz using a cubic
+    %  spline interpolation and filtered with a 3rd-order zero-phase
+    %  low-pass Butterworth filter with a cut-off frequency of 1.5 Hz.
+    %  (...) Finally, the filtered signal is resampled at the same time
+    %  locations of the original amplitude time series."
+    %  FOR SIMPLIFICATION WE TAKE THE MEAN VALUE OF ALL AMPLITUDES AS CORRECTION FACTOR
+    AmplitudeCorrectionFactor = mean(PPamplitudes);
+
 end

@@ -1,4 +1,4 @@
-%*******************************************************************************
+a%*******************************************************************************
  % Copyright (C) 2013 Francois PETITJEAN, Ioannis PAPARRIZOS
  % This program is free software: you can redistribute it and/or modify
  % it under the terms of the GNU General Public License as published by
@@ -23,10 +23,12 @@
 
 function average = DBA(sequences)
     average = repmat(sequences{medoidIndex(sequences)},1);
-% 	for i=1:15
+	%for i=1:15
+    %for i=1:5
+    for i=1:1
 		average=DBA_one_iteration(average,sequences);
-% 	end
- end
+	end
+end
 
 function sos = sumOfSquares(s,sequences)
     sos = 0.0;
