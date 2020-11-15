@@ -23,9 +23,9 @@
 
 function average = DBA(sequences)
     average = repmat(sequences{medoidIndex(sequences)},1);
-% 	for i=1:15
+	for i=1:5
 		average=DBA_one_iteration(average,sequences);
-% 	end
+	end
  end
 
 function sos = sumOfSquares(s,sequences)
