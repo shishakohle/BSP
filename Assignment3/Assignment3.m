@@ -7,3 +7,16 @@
 clear;
 close all;
 clc;
+
+%% Comment and uncomment according to your ECG .txt file location and your OS
+[file, path] = uigetfile({'*.txt;'}, 'MultiSelect', 'on');
+
+filepath = path + "/" + file;
+ECGdata = importHandscoredRRs(filepath);
+clear file path filepath;
+
+% HandscoredRRs = readECG(ECGdata);
+
+% function [ECGtimes, ECGintervals] = readECG(ECGdata)
+% 
+% end
