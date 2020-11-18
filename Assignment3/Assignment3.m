@@ -8,15 +8,22 @@ clear;
 close all;
 clc;
 
-%% Comment and uncomment according to your ECG .txt file location and your OS
+%% Choose your ECG .txt file via GUI
 [file, path] = uigetfile({'*.txt;'}, 'MultiSelect', 'on');
 
 filepath = path + "/" + file;
 ECGdata = importHandscoredRRs(filepath);
 clear file path filepath;
 
-% HandscoredRRs = readECG(ECGdata);
+% set sample interval and location of first beat in ECG data
+sampleInt = 256;
+locFirstbeat = 3;
 
-% function [ECGtimes, ECGintervals] = readECG(ECGdata)
-% 
-% end
+[ECGtimes, ECGintervals] = readECG(ECGdata, sampleInt); % time in seconds after start
+
+function [ECGtimes, ECGintervals] = readECG(ECGdata, sampleInt)
+
+    ECGtimes = cell2mat(ECGdata(3:end, 2)) ./ sampleInt;
+    ECGintervals = diff(ECGtimes);
+
+end
