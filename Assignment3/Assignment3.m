@@ -64,6 +64,21 @@ clear ECGdata hdr locFirstbeat rawPPGsignal sampleInt samplingRate;
 
 %% Call validate function
 
+real_beats = findbeatsfromECGinPPG(ECGtimes, PPGtimes);
+
+% doesnt work because of different dimensions - for loop needed
+function real_beats = findbeatsfromECGinPPG(ECGtimes, PPGtimes)
+    
+    PTT = 0.2; % time in ms
+    ECGplusPTTtimes = ECGtimes + PTT;
+
+%     for i = 1 : size(ECGtimes, 1)
+        
+        real_beats = find(PPGtimes >= (ECGplusPTTtimes - 0.05) | PPGtimes <= (ECGplusPTTtimes + 0.05));
+%     end
+
+end
+
 %% Function declaration
 function [ECGtimes, ECGintervals] = readECG(ECGdata, sampleInt, locFirstbeat)
 
@@ -74,7 +89,7 @@ end
 
 function [PPGtimes, PPGintervals] = readPPG(PPGdata)
 
-    PPGtimes = transpose(PPGdata(1, :));
+    PPGtimes = transpose(cell2mat(PPGdata(1, 1)));
     PPGintervals = diff(PPGtimes);
 
 end

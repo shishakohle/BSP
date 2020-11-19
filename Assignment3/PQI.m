@@ -28,8 +28,8 @@ function [beatTimesAmplitudesPQIs, pulseWaveTemplate] =  ...
     %  beat"
     % "Optional: calculated pulse wave template"
     
-    beatTimesAmplitudesPQIs = [BeatTimes; PPamplitudes; ...
-        PulseQualityIndexes];
+    beatTimesAmplitudesPQIs = {BeatTimes; PPamplitudes; ...
+        PulseQualityIndexes};
     pulseWaveTemplate = Temps_Ad;
     
 end
@@ -62,10 +62,10 @@ function [PP_Temp, AmplitudeCorrectionFactor, PP_PQI, BeatTimes, ...
 
     %% "PPG segmentation, beat localization" in the Papini paper, Figure 1
     
-    [BeatTimes, time] = beatLocalization(PPG_slimBand, samplingRate);
+    [PPGtimes, BeatTimes, time] = beatLocalization(PPG_slimBand, samplingRate);
     
     % segment with the help of BeatTimes
-    PP_wideBand = segmentation(PPG_slimBand, PPG_wideBand, BeatTimes, ...
+    PP_wideBand = segmentation(PPG_slimBand, PPG_wideBand, PPGtimes, ...
         time);
     
     [PP_Temp, PPamplitudes, PP_PQI] = pulseNormalization(...
@@ -191,7 +191,7 @@ function filtered = lowpassFilter(raw, f_sample, f_cutoff)
     end
 end
 
-function [beatTimes, time] = beatLocalization(PPG_slimBand, samplingRate)
+function [PPGTimes, BeatTimes, time] = beatLocalization(PPG_slimBand, samplingRate)
     
     %% "Beat Localization" in the Papini paper, Figure 1
     
@@ -203,14 +203,19 @@ function [beatTimes, time] = beatLocalization(PPG_slimBand, samplingRate)
     
     % find minima
     PPG_slimBand_inv = PPG_slimBand*-1;
-%     figure;
+    figure;
 %     hold on;
+%     subplot(2, 1, 1);
 %     findpeaks(PPG_slimBand, time, 'MinPeakDistance', min_RRinterval);
+%     subplot(2, 1, 2);
 %     findpeaks(PPG_slimBand_inv, time, 'MinPeakDistance', min_RRinterval);
 %     hold off;
-    [peak_vals, peak_locs, peak_widths, peak_prominences] = ...
+    [~, PPG_locs, ~, ~] = ...
     findpeaks(PPG_slimBand_inv, time, 'MinPeakDistance', min_RRinterval, 'MinPeakHeight', 0); % with negativity condition as in formula 1 in paper here >0 because of inv. sig.
-    beatTimes = peak_locs; % time of detected beats (in seconds after the start of the signal)
+    PPGTimes = PPG_locs; % start and end of PPG curve (in seconds after the start of the signal)
+    [~, beat_locs, ~, ~] = ...
+    findpeaks(PPG_slimBand, time, 'MinPeakDistance', min_RRinterval); 
+    BeatTimes = beat_locs; %time of detected beats (in seconds after the start of the signal)
     
 end
 
