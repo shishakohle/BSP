@@ -14,53 +14,55 @@ clc;
 
 %% Comment and uncomment according to your EDF file location and your OS
 
-% choose on an EDF subfolder:
-% edfSubfolder = ".";
+% Define the subfolders for PPG (*.EDF) and ECG (*.TXT) files:
 edfSubfolder = "edf";
+ecgSubfolder = "ECG";
 
-% choose on an EDF file:
-edfFilename  = "s1_high_resistance_bike.edf";
-% edfFilename  = ""; % TODO add further files
-% edfFilename  = "";
+% Choose on a set of measuerements to be validated:
+set = "s1_high_resistance_bike";
+% set = "s1_low_resistance_bike";
+% set = "s1_walk";
+% set = ""; % TODO add further files
 
-% choose on the path notion of your operating system:
-% uncomment the next line for MS Windows
-% filepath = edfSubfolder + "\" + edfFilename;
-% uncomment the next line for Linux distributions / Mac OS X
-filepath = edfSubfolder + "/" + edfFilename;
+% Choose on the path notion of your operating system:
 
-clear edfSubfolder;
-clear edfFilename;
+% uncomment the next two lines for MS Windows
+% edfFilepath = edfSubfolder + "\" + set + ".edf";
+% ecgFilepath = ecgSubfolder + "\" + set + ".txt";
+
+% uncomment the next two lines line for Linux distributions / Mac OS X
+edfFilepath = edfSubfolder + "/" + set + ".edf";
+ecgFilepath = ecgSubfolder + "/" + set + ".txt";
+
+clear set edfSubfolder ecgSubolder;
 
 %% Extract raw wrist PPG signal from EDF file
 
-[hdr, rawPPGsignal] = edfread(filepath, 'targetSignals', 'wrist_ppg');
+[hdr, rawPPGsignal] = edfread(edfFilepath, 'targetSignals', 'wrist_ppg');
 samplingRate        = hdr.samples / hdr.duration;
 
-%% Execute the essence function of Assignment 2
+clear hdr;
 
-[beatTimesAmplitudesPQIs, ~] = PQI(rawPPGsignal, ...
-    samplingRate);
-
-%% Choose your ECG .txt file via GUI
-[file, path] = uigetfile({'*.txt;'}, 'MultiSelect', 'on');
-
-filepath = path + "/" + file;
-ECGdata = importHandscoredRRs(filepath);
-clear file path filepath;
+%% Extract raw data from ECG file
+ECGdata = importHandscoredRRs(ecgFilepath);
 
 % set sample interval and location of first beat in ECG data
 sampleInt = 256;
 locFirstbeat = 3;
 
+%% Get beat times and intervals from both PPG (according to Assignemnt 2)
+%  and ECG raw data
+
+% get PPGtimes and PPGintervals
+% For this, execute the essence function of Assignment 2:
+[beatTimesAmplitudesPQIs, ~] = PQI(rawPPGsignal, samplingRate);
+[PPGtimes, PPGintervals]     = readPPG(beatTimesAmplitudesPQIs); % time in seconds after start and intervals in seconds
+
 % get ECGtimes and ECGintervals
 [ECGtimes, ECGintervals] = readECG(ECGdata, sampleInt, locFirstbeat); % time in seconds after start and intervals in seconds
 
-% get PPGtimes and PPGintervals
-[PPGtimes, PPGintervals] = readPPG(beatTimesAmplitudesPQIs); % time in seconds after start and intervals in seconds
-
 % clear everything we don't need here anymore
-clear ECGdata hdr locFirstbeat rawPPGsignal sampleInt samplingRate;
+clear ECGdata locFirstbeat rawPPGsignal sampleInt samplingRate;
 
 %% Call validate function
 
