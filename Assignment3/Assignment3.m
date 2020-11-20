@@ -73,42 +73,39 @@ clearvars -except ECGbeattimes ECGbeatintervals PPGbeattimes PPGbeatintervals ra
 % function real_beats = findbeatsfromECGinPPG(ECGtimes, PPGtimes)
     
     % pulse transit time calculation/estimation
-    avgPWV = 6.84; % average pulse wave velocity [m/s] of healthy persons D�az et. al. "Reference Values of Pulse Wave Velocity in Healthy People from an Urban and Rural Argentinean Population", International Journal of Hypertension, vol. 2014, Article ID 653239, 7 pages, 2014. https://doi.org/10.1155/2014/653239
-    avgHeightFM = 1.66; % average body height of west european women [m]
-    avgHeightM = 1.8; % average body height of west european men [m]
+    avgPWV = 6.84; % average pulse wave velocity [m/s] of healthy persons Diaz et. al. "Reference Values of Pulse Wave Velocity in Healthy People from an Urban and Rural Argentinean Population", International Journal of Hypertension, vol. 2014, Article ID 653239, 7 pages, 2014. https://doi.org/10.1155/2014/653239
+    avgHeightFM = 1.66; % average body height of west european women [m] https://www.worlddata.info/average-bodyheight.php
+    avgHeightM = 1.8; % average body height of west european men [m] https://www.worlddata.info/average-bodyheight.php
     avgHeight = (avgHeightFM + avgHeightM) / 2;
     avgLengthHearttoFinger = avgHeight / 2; % average length from the heart to the fingertip of west europeans [m] (https://www.scientificamerican.com/article/human-body-ratios/)
     avgPTT = avgLengthHearttoFinger / avgPWV; % average PTT from heart to fingertip in [s]
     
+    % ECG beats corrected to PPG signal by adding avgPTT
     ECGplusPTTtimes = ECGbeattimes + avgPTT;
-    timeTolerance = 0.5; % pecentage
-    timeLowerLimit = ECGplusPTTtimes - (avgPTT + avgPTT * timeTolerance);
-    timeUpperLimit = ECGplusPTTtimes + (avgPTT + avgPTT * timeTolerance);
-    count = 1;
+    Tolerance = 0.1; % pecentage
+    timeTolerance = avgPTT + avgPTT * Tolerance;
+
+    [TP, locTPandFN] = ismembertol(PPGbeattimes, ECGplusPTTtimes, timeTolerance, 'DataScale', 1); % TP = logical vector containing 1 at the index for all true positives and 0 for all false positives / FN = vector containing index of the elements where a beat in PPG was found in ECG and 0 where it is a false negative
     
-    % Plot PPG and ECG
-
-    max_freq = 210/60; % maximum expectable frequency is 210 bpm -> converted to Hz
-    min_RRinterval = 1/max_freq;
-%     time_PPG = ((1:size(PPGsignal, 1)))/samplingRate;
-
+    % calculate specificity
+    nTP = sum(TP);
+    nFP = size(PPGbeattimes, 1) - nTP;
+    nFN = size(ECGbeattimes, 1) - size(find(~locTPandFN), 1); 
+    Specificity = nTP / (nTP + nFN);
+    
+    % make plot for graphical investigation - green ECG beats with PPT
+    % shift / blue PPG beats / black TP PPG beats squares are on 1 - so if
+    % green star is not in a balck square its a FP
     ECGvect = zeros(size(ECGbeattimes, 1), 1);
     PPGvect = zeros(size(PPGbeattimes, 1), 1);
-
     figure;
     hold on;
-%     findpeaks(PPGsignal, time_PPG, 'MinPeakDistance', min_RRinterval);
-    plot(ECGbeattimes, ECGvect, 'r*');
+%     plot(ECGbeattimes, ECGvect, 'r*');
     plot(ECGplusPTTtimes, ECGvect, 'g*');
     plot(PPGbeattimes, PPGvect, 'b*');
+    plot(PPGbeattimes, TP, 'ks');
+    ylim([0 1.5]);
     hold off;
-
-    for i = 1 : size(PPGbeattimes, 1)
-        if PPGbeattimes(i) >= timeLowerLimit(i) && PPGbeattimes(i) <= timeUpperLimit(i)
-        real_beats(count) = PPGbeattimes(i);
-        count = count + 1;
-        end
-    end
 
 % end
 
@@ -120,10 +117,9 @@ function [ECGbeattimes, ECGbeatintervals] = readECG(ECGdata, sampleInt, locFirst
 
 end
 
-function [PPGbeattimes, PPGbeatintervals, PPGsignal] = readPPG(PPGdata)
+function [PPGbeattimes, PPGbeatintervals] = readPPG(PPGdata)
 
     PPGbeattimes = transpose(cell2mat(PPGdata(1, 1)));
     PPGbeatintervals = diff(PPGbeattimes);
-    PPGsignal = transpose(cell2mat(PPGdata(4, 1)));
 
 end

@@ -29,7 +29,7 @@ function [beatTimesAmplitudesPQIs, pulseWaveTemplate] =  ...
     % "Optional: calculated pulse wave template"
     
     beatTimesAmplitudesPQIs = {BeatTimes; PPamplitudes; ...
-        PulseQualityIndexes; PPG_slimBand};
+        PulseQualityIndexes};
     pulseWaveTemplate = Temps_Ad;
     
 end
