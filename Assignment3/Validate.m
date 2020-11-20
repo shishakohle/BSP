@@ -1,6 +1,8 @@
 %% Function PQI() as a solution to Assignment 3
 
-function Sensitvity = Validate(PPGbeattimes, PPGbeatintervals, ECGbeattimes, ECGbeatintervals)
+function [Sensitvity, nTP, nFP, nFN, beatplotFigure, scatterplotFigure] ...
+    = Validate(PPGbeattimes, PPGbeatintervals, ECGbeattimes, ...
+    ECGbeatintervals)
     
     % pulse transit time calculation/estimation
     avgPWV = 6.84; % average pulse wave velocity [m/s] of healthy persons Diaz et. al. "Reference Values of Pulse Wave Velocity in Healthy People from an Urban and Rural Argentinean Population", International Journal of Hypertension, vol. 2014, Article ID 653239, 7 pages, 2014. https://doi.org/10.1155/2014/653239
@@ -41,7 +43,8 @@ function Sensitvity = Validate(PPGbeattimes, PPGbeatintervals, ECGbeattimes, ECG
     % green star is not in a balck square its a FP
     ECGvect = zeros(size(ECGbeattimes, 1), 1);
     PPGvect = zeros(size(PPGbeattimes, 1), 1);
-    figure;
+    beatplotFigure = figure;
+    beatplotFigure.Visible='off';
     hold on;
 %     plot(ECGbeattimes, ECGvect, 'r*');
     plot(ECGplusPTTtimes, ECGvect, 'g*');
@@ -61,5 +64,6 @@ function Sensitvity = Validate(PPGbeattimes, PPGbeatintervals, ECGbeattimes, ECG
     corrinfo = {'n','SSE','r2','eq'}; % stats to display of correlation scatter plot
     BAinfo = {'RPC(%)','ks'}; % stats to display on Bland-ALtman plot
 
-    BlandAltman(ECGbeatintervalsforAnalysis, PPGbeatintervalsforAnalysis, 'BeatIntervals', 'BeatInterval analysis');
+    [~, scatterplotFigure, ~] = BlandAltman(ECGbeatintervalsforAnalysis, PPGbeatintervalsforAnalysis, 'BeatIntervals', 'BeatInterval analysis');
+    scatterplotFigure.Visible='off';
 end

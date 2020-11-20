@@ -40,6 +40,7 @@ samplingRate        = hdr.samples / hdr.duration;
 clear hdr;
 
 %% Extract raw data from ECG file
+
 ECGdata = importHandscoredRRs(ecgFilepath);
 
 % set sample interval and location of first beat in ECG data
@@ -63,9 +64,25 @@ clearvars -except ECGbeattimes ECGbeatintervals PPGbeattimes PPGbeatintervals;
 
 %% Call validate function
 
-Sensitvity = Validate(PPGbeattimes, PPGbeatintervals, ECGbeattimes, ECGbeatintervals);
+[Sensitvity, nTP, nFP, nFN, beatplotFigure, scatterplotFigure] = ...
+    Validate(PPGbeattimes, PPGbeatintervals, ECGbeattimes, ...
+    ECGbeatintervals);
 
-%% Function declaration
+% print results to console:
+display ("Sensitvity: "+ Sensitvity);
+display ("True Positives: " + nTP);
+display ("False Positives: " + nFP);
+display ("False Negatives: " + nFN);
+
+% you may want to show one of the returned plots, e.g. the scatterplot:
+scatterplotFigure.Visible='on';
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%
+%% Helper functions %%
+%%%%%%%%%%%%%%%%%%%%%%
+
 function [ECGbeattimes, ECGbeatintervals] = readECG(ECGdata, sampleInt, locFirstbeat)
 
     ECGbeattimes = cell2mat(ECGdata(locFirstbeat:end, 2)) ./ sampleInt;
