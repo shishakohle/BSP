@@ -63,7 +63,7 @@ locFirstbeat = 3;
 [ECGbeattimes, ECGbeatintervals] = readECG(ECGdata, sampleInt, locFirstbeat); % time in seconds after start and intervals in seconds
 
 % clear everything we don't need here anymore
-clearvars -except ECGbeattimes ECGbeatintervals PPGbeattimes PPGbeatintervals rawPPGsignal PPGsignal ECGdata samplingRate;
+clearvars -except ECGbeattimes ECGbeatintervals PPGbeattimes PPGbeatintervals;
 
 %% Call validate function
 

@@ -12,7 +12,7 @@ function Sensitvity = Validate(PPGbeattimes, PPGbeatintervals, ECGbeattimes, ECG
     
     % ECG beats corrected to PPG signal by adding avgPTT
     ECGplusPTTtimes = ECGbeattimes + avgPTT;
-    Tolerance = 0.3; % 30 pecent tolerance - determined heuristically
+    Tolerance = 0.3; % 30 pecent tolerance - determined empirically
     timeTolerance = avgPTT + avgPTT * Tolerance;
 
     [TP, locTPandFN] = ismembertol(PPGbeattimes, ECGplusPTTtimes, timeTolerance, 'DataScale', 1); % TP = logical vector containing 1 at the index for all true positives and 0 for all false positives / locTPandFN = vector containing index of the elements where a beat in PPG was found in ECG and 0 where it is a false negative
