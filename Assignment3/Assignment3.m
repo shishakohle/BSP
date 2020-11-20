@@ -34,7 +34,7 @@ set = "s1_high_resistance_bike";
 edfFilepath = edfSubfolder + "/" + set + ".edf";
 ecgFilepath = ecgSubfolder + "/" + set + ".txt";
 
-clear set edfSubfolder ecgSubolder;
+clear set edfSubfolder ecgSubfolder;
 
 %% Extract raw wrist PPG signal from EDF file
 
@@ -90,15 +90,17 @@ clearvars -except ECGbeattimes ECGbeatintervals PPGbeattimes PPGbeatintervals ra
 
     max_freq = 210/60; % maximum expectable frequency is 210 bpm -> converted to Hz
     min_RRinterval = 1/max_freq;
-    time_PPG = ((1:size(PPGsignal, 1)))/samplingRate;
+%     time_PPG = ((1:size(PPGsignal, 1)))/samplingRate;
 
     ECGvect = zeros(size(ECGbeattimes, 1), 1);
+    PPGvect = zeros(size(PPGbeattimes, 1), 1);
 
     figure;
     hold on;
-    findpeaks(PPGsignal, time_PPG, 'MinPeakDistance', min_RRinterval);
+%     findpeaks(PPGsignal, time_PPG, 'MinPeakDistance', min_RRinterval);
     plot(ECGbeattimes, ECGvect, 'r*');
     plot(ECGplusPTTtimes, ECGvect, 'g*');
+    plot(PPGbeattimes, PPGvect, 'b*');
     hold off;
 
     for i = 1 : size(PPGbeattimes, 1)
