@@ -56,7 +56,7 @@ locFirstbeat = 3;
 % get PPGtimes and PPGintervals
 % For this, execute the essence function of Assignment 2:
 [beatTimesAmplitudesPQIs, ~] = PQI(rawPPGsignal, samplingRate);
-[PPGbeattimes, PPGbeatintervals, PPGsignal] = ...
+[PPGbeattimes, PPGbeatintervals] = ...
     readPPG(beatTimesAmplitudesPQIs); % time in seconds after start and intervals in seconds
 
 % get ECGtimes and ECGintervals
