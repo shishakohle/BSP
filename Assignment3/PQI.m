@@ -29,7 +29,7 @@ function [beatTimesAmplitudesPQIs, pulseWaveTemplate] =  ...
     % "Optional: calculated pulse wave template"
     
     beatTimesAmplitudesPQIs = {BeatTimes; PPamplitudes; ...
-        PulseQualityIndexes};
+        PulseQualityIndexes; PPG_slimBand};
     pulseWaveTemplate = Temps_Ad;
     
 end
@@ -203,7 +203,7 @@ function [PPGTimes, BeatTimes, time] = beatLocalization(PPG_slimBand, samplingRa
     
     % find minima
     PPG_slimBand_inv = PPG_slimBand*-1;
-    figure;
+%     figure;
 %     hold on;
 %     subplot(2, 1, 1);
 %     findpeaks(PPG_slimBand, time, 'MinPeakDistance', min_RRinterval);
