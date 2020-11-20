@@ -1,7 +1,3 @@
-%% REMINDER
-% @Alex - don't forget to change "hard coding" of A2 - so that template is
-% created for the chosen EDF file
-
 %% Biosignal Processing - Assingment 3
 % Group H: Alexander Neumayer, Ingo Weigel
 % 2020-11-20

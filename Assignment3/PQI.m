@@ -99,10 +99,10 @@ function Temps_Ad = templateCreation(PPs_Temp, f_sample, ...
     %  to calculate the quality index (PPs_PQI).
     
     % medoid calculation done by DBA():
-%     temporaryTemplate = DBA(PPs_Temp); % function in DBA.m
+%    temporaryTemplate = DBA(PPs_Temp); % function in DBA.m - UNCOMMENT THIS FOR INDIVIDUAL TEMPLATE CREATION
     % Papini intereates 5 times, DBA() 15 times, therefore we set it to 5 times!
     % still HIGH COMPUTATIONAL EFFORT, THEREFORE AS A PROVISORY SOLUTION do it once and then use from workspace:
-    load('DBAoutput_5it.mat', 'temporaryTemplate');
+    load('DBAoutput_5it.mat', 'temporaryTemplate'); % COMMENT THIS LINE FOR INDIVIDUAL TEMPLATE CREATION
     
     Template = lowpassFilter(temporaryTemplate, f_sample, 10);
     Template = normalize(Template);
