@@ -1,6 +1,6 @@
 %% Function PQI() as a solution to Assignment 3
 
-function [Sensitvity, nTP, nFP, nFN, beatplotFigure, scatterplotFigure] ...
+function [Sensitivity, ECGbeatintervalsforAnalysis, PPGbeatintervalsforAnalysis, nTP, nFP, nFN, beatplotFigure, scatterplotFigure] ...
     = Validate(PPGbeattimes, PPGbeatintervals, ECGbeattimes, ...
     ECGbeatintervals)
     
@@ -14,56 +14,67 @@ function [Sensitvity, nTP, nFP, nFN, beatplotFigure, scatterplotFigure] ...
     
     % ECG beats corrected to PPG signal by adding avgPTT
     ECGplusPTTtimes = ECGbeattimes + avgPTT;
-    Tolerance = 0.3; % 30 pecent tolerance - determined empirically
+    Tolerance = 0.15; % 15 pecent tolerance - determined empirically
     timeTolerance = avgPTT + avgPTT * Tolerance;
+    timeTolerance = timeTolerance + 0.125 / 2; % account for the pulse transit time variations in PPG according to Foo et al 2005
 
     [TP, locTPandFN] = ismembertol(PPGbeattimes, ECGplusPTTtimes, timeTolerance, 'DataScale', 1); % TP = logical vector containing 1 at the index for all true positives and 0 for all false positives / locTPandFN = vector containing index of the elements where a beat in PPG was found in ECG and 0 where it is a false negative
-    numberuniqueentriesinlocTPandFN = length(unique(locTPandFN));
-    
-    % tried an approach to find a tolerance value which fits so that only unique PPG
-    % beats are found in ECG data - but it doesnt work. I'm too tired at this
-    % point
-%     while numberuniqueentriesinlocTPandFN < length(PPGbeattimes)
-%         
-%         Tolerance = Tolerance - 0.1;
-%         timeTolerance = avgPTT + avgPTT * Tolerance;
-%         [TP, locTPandFN] = ismembertol(PPGbeattimes, ECGplusPTTtimes, timeTolerance, 'DataScale', 1); % TP = logical vector containing 1 at the index for all true positives and 0 for all false positives / locTPandFN = vector containing index of the elements where a beat in PPG was found in ECG and 0 where it is a false negative
-%         numberuniqueentriesinlocTPandFN = length(unique(locTPandFN));
-% 
-%     end
     
     % calculate sensitivity of beat detection
     nTP = sum(TP);
     nFP = size(PPGbeattimes, 1) - nTP;
     nFN = size(ECGbeattimes, 1) - size(find(locTPandFN), 1); 
-    Sensitvity = nTP / (nTP + nFN);
+    Sensitivity = nTP / (nTP + nFN);
+    PPGtoECGbeat_ratio = length(PPGbeattimes) / length(ECGbeattimes);
     
     % make plot for graphical investigation - green ECG beats with PPT
     % shift / blue PPG beats / black TP PPG beats squares are on 1 - so if
     % green star is not in a balck square its a FP
+    ECGplusPTTtimes_lowerlim = ECGplusPTTtimes - timeTolerance;
+    ECGplusPTTtimes_upperlim = ECGplusPTTtimes + timeTolerance;
+    
     ECGvect = zeros(size(ECGbeattimes, 1), 1);
     PPGvect = zeros(size(PPGbeattimes, 1), 1);
     beatplotFigure = figure;
-    beatplotFigure.Visible='off';
+    beatplotFigure.Visible='on';
     hold on;
-%     plot(ECGbeattimes, ECGvect, 'r*');
+    plot(ECGbeattimes, ECGvect, 'r*');
     plot(ECGplusPTTtimes, ECGvect, 'g*');
+    plot(ECGplusPTTtimes_lowerlim, ECGvect, 'g>');
+    plot(ECGplusPTTtimes_upperlim, ECGvect, 'g<');
     plot(PPGbeattimes, PPGvect, 'b*');
     plot(PPGbeattimes, TP, 'ks');
     ylim([0 1.5]);
+    legend('ECG beats','Adjusted ECG beats', 'time tolerance lower limit', 'time tolerance upper limit', 'PPG beats', 'false positive PPG beats'); 
     hold off;
 
     % make bland-altman and correlation plots for inter beat intervals of
     % the TP beats
     locTPinECGbeats = locTPandFN;
     locTPinECGbeats(~locTPandFN) = [];
+    if locTPinECGbeats(end) > length(ECGbeatintervals)
+        
+        locTPinECGbeats(end) = [];
+        
+    end
     ECGbeatintervalsforAnalysis = ECGbeatintervals(locTPinECGbeats); % could lead to problem if index in locTPinECGbeats > size of ECGbeatintervals
+    if length(TP) > length(PPGbeatintervals)
+        
+        TP(end) = [];
+        
+    end
     PPGbeatintervalsforAnalysis = PPGbeatintervals(TP);
     
+    if length(PPGbeatintervalsforAnalysis) > length(ECGbeatintervalsforAnalysis)
+        
+        PPGbeatintervalsforAnalysis(end) = [];
+        
+    end
+    
     % BA plot paramters
-    corrinfo = {'n','SSE','r2','eq'}; % stats to display of correlation scatter plot
-    BAinfo = {'RPC(%)','ks'}; % stats to display on Bland-ALtman plot
+    tit = 'BeatInterval analysis'; % figure title
+    label = {'ECG beat intervals', 'PPG beat intervals', 'seconds'}; % Names of data sets
 
-    [~, scatterplotFigure, ~] = BlandAltman(ECGbeatintervalsforAnalysis, PPGbeatintervalsforAnalysis, 'BeatIntervals', 'BeatInterval analysis');
+    [~, scatterplotFigure, ~] = BlandAltman(ECGbeatintervalsforAnalysis, PPGbeatintervalsforAnalysis, label, tit);
     scatterplotFigure.Visible='off';
 end
